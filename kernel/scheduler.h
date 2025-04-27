@@ -24,21 +24,23 @@ void __scheduler_enqueue_timedout(ScheduleEvent ev)
 // returns true on events to remove, false on element to keep
 ibool __scheduler_handle_timeout(u32 i)
 {
-    if (kGlobal.scheduler.eventBuffer[i].timeoutTick == U32_MAXVAL)
+    if (kGlobal.scheduler.eventBuffer[i].timeoutTick.cycle == U32_MAXVAL)
         return true;
 
-    if (kGlobal.scheduler.eventBuffer[i].timeoutTick >= kGlobal.timing.tick)
+    if (extick_greater_than(kGlobal.scheduler.eventBuffer[i].timeoutTick, kGlobal.timing.tick))
         return false;
 
     ibool ret = false;
     if (kGlobal.scheduler.eventBuffer[i].isRoutine)
     {
-        u32 prevTimeout = kGlobal.scheduler.eventBuffer[i].timeoutTick;
-        kGlobal.scheduler.eventBuffer[i].timeoutTick = prevTimeout + kGlobal.scheduler.eventBuffer[i].intervalTick;
+        ExTick prevTimeout = kGlobal.scheduler.eventBuffer[i].timeoutTick;
+        extick_add(&prevTimeout, (ExTick){ .cycle = 0, .tick = kGlobal.scheduler.eventBuffer[i].intervalTick });
+        kGlobal.scheduler.eventBuffer[i].timeoutTick = prevTimeout;
     }
     else
     {
-        kGlobal.scheduler.eventBuffer[i].timeoutTick = U32_MAXVAL;
+        kGlobal.scheduler.eventBuffer[i].timeoutTick.cycle = U32_MAXVAL;
+        kGlobal.scheduler.eventBuffer[i].timeoutTick.tick = 0;
         ret = true;
     }
     __scheduler_enqueue_timedout(kGlobal.scheduler.eventBuffer[i]);
@@ -64,7 +66,7 @@ void __scheduler_defrag(void)
     u32 j = 0;
     for (u32 i = 0; i < kGlobal.scheduler.eventBufferHead; ++i)
     {
-        if (kGlobal.scheduler.eventBuffer[i].timeoutTick != U32_MAXVAL)
+        if (kGlobal.scheduler.eventBuffer[i].timeoutTick.cycle != U32_MAXVAL)
         {
             if (i != j)
                 kGlobal.scheduler.eventBuffer[j] = kGlobal.scheduler.eventBuffer[i];
@@ -111,9 +113,12 @@ ScheduleEvent schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg
 {
     if (kGlobal.scheduler.eventBufferHead >= SCHEDULER_BUFF_SIZE)
         kernel_panic(KERR_SCHEDULER_OVERFLOW, "Too many scheduled events/routines.");
+    
+    ExTick timeoutExTick = kGlobal.timing.tick;
+    extick_add(&timeoutExTick, (ExTick){ .cycle = 0, .tick = timeoutTicks });
 
     ScheduleEvent ev = (ScheduleEvent){
-        .timeoutTick = kGlobal.timing.tick + timeoutTicks,
+        .timeoutTick = timeoutExTick,
         .intervalTick = timeoutTicks,
         .arg0 = arg0,
         .callback = callback,
@@ -156,7 +161,8 @@ void unschedule(ScheduleEvent ev)
             && iev->intervalTick == ev.intervalTick
             && iev->isRoutine == ev.isRoutine)
         {
-            kGlobal.scheduler.eventBuffer[i].timeoutTick = U32_MAXVAL;
+            kGlobal.scheduler.eventBuffer[i].timeoutTick.cycle = U32_MAXVAL;
+            kGlobal.scheduler.eventBuffer[i].timeoutTick.tick = 0;
             kGlobal.scheduler.eventBuffer[i].isRoutine = false;
             kGlobal.scheduler.needDefrag = true;
         }

@@ -72,8 +72,15 @@ void kapp_yield()
 
 void kapp_sleep_ticks(u32 ticks)
 {
+    if (!ticks)
+    {
+        kapp_yield();
+        return;
+    }
+
     volatile ibool done = false;
-    (void)schedule(ticks, __kapp_sleep_callback, (void*)&done, false);
+    ScheduleEvent _ = schedule(ticks, __kapp_sleep_callback, (void*)&done, false);
+    (void)_;
 
     while (!done)
         kernel_process();
@@ -81,5 +88,5 @@ void kapp_sleep_ticks(u32 ticks)
 
 void kapp_sleep_ms(u32 ms)
 {
-    kapp_sleep_ticks(ms_to_ticks(ms, 50));
+    kapp_sleep_ticks(ms_to_ticks(ms));
 }

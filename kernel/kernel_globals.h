@@ -3,18 +3,21 @@
 #include "../xstd/xstd_core.h"
 #include "../xstd/xstd_alloc.h"
 
+#include "extended_tick.h"
 #include "time_type.h"
 #include "schedule_event_type.h"
 
 #define KERNEL_HEAP_SIZE (4096 * 2)
 #define KEYBOARD_INPUT_BUFF_SIZE 256
+#define KERNEL_TICK_FREQ 100
+#define KERNEL_PRINT_TIME_INTERVAL_MS 100
 
 static struct _kernel_globals
 {
     struct
     {
-        u32 tick;
-        u32 tickCycles;
+        u32 tickFreq;
+        ExTick tick;
         u32 utcCacheTick;
         Time cachedUtcTime;
     } timing;
@@ -48,8 +51,8 @@ static struct _kernel_globals
     
 } kGlobal = {
     .timing = {
-        .tick = 0,
-        .tickCycles = 0,
+        .tickFreq = KERNEL_TICK_FREQ,
+        .tick = {0},
         .utcCacheTick = I32_MAXVAL,
         .cachedUtcTime = {0},
     },

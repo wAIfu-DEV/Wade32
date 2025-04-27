@@ -61,7 +61,7 @@ void kernel_main(void)
 
     vga_print(vga, "> Initialized interrupts.\n");
 
-    init_timer(50);
+    init_timer(KERNEL_TICK_FREQ);
 
     vga_print(vga, "> Started tick timer.\n");
 
@@ -69,7 +69,7 @@ void kernel_main(void)
 
     vga_print(vga, "> Registered keyboard handler, switching to user input mode.\n");
     
-    u32 timeout = ms_to_ticks(200, 50);
+    u32 timeout = ms_to_ticks(KERNEL_PRINT_TIME_INTERVAL_MS);
     schedule(timeout, __kernel_print_time, &vga, true);
 
     vga_print(vga, "> Scheduled timings printing routine.\n");
@@ -118,11 +118,14 @@ void __kernel_print_time(void* arg0)
         vga_print(&v, "0000-00-00 00:00:00");
     }
 
-    vga_print(&v, ", ms:");
-    vga_print_uint(&v, ticks_to_ms(kGlobal.timing.tick, 50));
+    vga_print(&v, ", cy:");
+    vga_print_uint(&v, kGlobal.timing.tick.cycle);
 
     vga_print(&v, ", tk:");
-    vga_print_uint(&v, kGlobal.timing.tick);
+    vga_print_uint(&v, kGlobal.timing.tick.tick);
+
+    vga_print(&v, ", ms:");
+    vga_print_uint(&v, ticks_to_ms(kGlobal.timing.tick.tick));
 
     vga_print(&v, ", heap:");
     vga_print_uint(&v, kGlobal.heap.debugInfo.activeBytes);

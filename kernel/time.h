@@ -8,14 +8,14 @@
 #include "time_type.h"
 #include "kernel_globals.h"
 
-u32 ticks_to_ms(u32 ticks, u32 tickHz)
+u32 ticks_to_ms(u32 ticks)
 {
-    return (ticks * 1000) / tickHz;
+    return (ticks * 1000) / kGlobal.timing.tickFreq;
 }
 
-u32 ms_to_ticks(u32 ms, u32 tickHz)
+u32 ms_to_ticks(u32 ms)
 {
-    return (ms * tickHz) / 1000;
+    return (ms * kGlobal.timing.tickFreq) / 1000;
 }
 
 u8 read_rtc_register(u8 reg) {
@@ -38,7 +38,7 @@ Time time_utc()
     // Unsure if needed, but should prevent blocking in most cases considering this
     // function might be used multiple times per sec on OS-scale.
     // Max accuracy loss of ~200ms
-    if (kGlobal.timing.tick - kGlobal.timing.utcCacheTick < 10) {
+    if (kGlobal.timing.tick.tick - kGlobal.timing.utcCacheTick < 10) {
         return kGlobal.timing.cachedUtcTime;
     } else {
         while (is_rtc_time_updating()); // Wait until not updating
@@ -53,7 +53,7 @@ Time time_utc()
         .year =    bcd_to_binary(read_rtc_register(0x09)),
         .century = bcd_to_binary(read_rtc_register(0x32)),
     };
-    kGlobal.timing.utcCacheTick = kGlobal.timing.tick;
+    kGlobal.timing.utcCacheTick = kGlobal.timing.tick.tick;
     return kGlobal.timing.cachedUtcTime;
 }
 
