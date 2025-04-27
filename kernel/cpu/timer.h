@@ -7,11 +7,14 @@
 #include "../extended_tick.h"
 #include "../kernel_globals.h"
 
-static void timer_callback(registers_t regs) {
+static void timer_callback(registers_t regs)
+{
+    (void)regs;
     extick_add_ticks(&kGlobal.timing.tick, 1);
 }
 
-void init_timer(u32 freq) {
+void timer_init(u32 freq)
+{
     /* Install the function we just wrote */
     register_interrupt_handler(IRQ0, timer_callback);
 

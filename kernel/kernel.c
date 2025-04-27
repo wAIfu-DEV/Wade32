@@ -61,7 +61,7 @@ void kernel_main(void)
 
     vga_print(vga, "> Initialized interrupts.\n");
 
-    init_timer(KERNEL_TICK_FREQ);
+    timer_init(KERNEL_TICK_FREQ);
 
     vga_print(vga, "> Started tick timer.\n");
 
@@ -74,7 +74,26 @@ void kernel_main(void)
 
     vga_print(vga, "> Scheduled timings printing routine.\n");
 
-    Error shellErr = kapp_shell_main();
+    ResultHashMap envMapRes = HashMapInitT(KappEntrypoint, &kGlobal.heap.allocator);
+    if (envMapRes.error)
+        kernel_panic(KERR_ENV_INIT_ERROR, "Failed to initialize kernel apps registry.");
+
+    kGlobal.kernel_apps.map = envMapRes.value;
+
+    for (u32 i = 0; i < KAPPS_REG_SIZE; ++i)
+    {
+        const KappRegEntry entry = kappRegistry[i];
+        Error err = hashmap_set_str(&kGlobal.kernel_apps.map, entry.appName, &entry.entryPoint);
+        if (err)
+            kernel_panic(KERR_ENV_FILL_ERROR, "Failed to fill kernel apps registry.");
+    }
+
+    KappEntrypoint shell;
+    Error err = hashmap_get_str(&kGlobal.kernel_apps.map, "shell", &shell);
+    if (err)
+        kernel_panic(KERR_ENV_FILL_ERROR, "Failed to retrieve entry point of shell kernel app.");
+
+    Error shellErr = shell();
     if (shellErr)
         kernel_panic((u32)shellErr, ErrorToString(shellErr));
 
@@ -123,9 +142,6 @@ void __kernel_print_time(void* arg0)
 
     vga_print(&v, ", tk:");
     vga_print_uint(&v, kGlobal.timing.tick.tick);
-
-    vga_print(&v, ", ms:");
-    vga_print_uint(&v, ticks_to_ms(kGlobal.timing.tick.tick));
 
     vga_print(&v, ", heap:");
     vga_print_uint(&v, kGlobal.heap.debugInfo.activeBytes);

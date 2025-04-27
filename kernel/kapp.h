@@ -3,6 +3,7 @@
 #include "vga.h"
 #include "kernel_globals.h"
 #include "kapp_screen.h"
+#include "kapp_input.h"
 #include "kernel_process_loop.h"
 
 ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, ibool isFullscreen)

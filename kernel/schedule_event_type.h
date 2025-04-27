@@ -3,7 +3,7 @@
 #include "../xstd/xstd_core.h"
 #include "extended_tick.h"
 
-#define SCHEDULER_BUFF_SIZE 256
+#define SCHEDULER_BUFF_SIZE 128
 
 typedef struct _schedule_event
 {

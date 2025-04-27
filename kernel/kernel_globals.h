@@ -6,48 +6,56 @@
 #include "extended_tick.h"
 #include "time_type.h"
 #include "schedule_event_type.h"
+#include "kapp_inputbuff_type.h"
+#include "kernel_apps/kapps_reg.h"
 
 #define KERNEL_HEAP_SIZE (4096 * 2)
-#define KEYBOARD_INPUT_BUFF_SIZE 256
 #define KERNEL_TICK_FREQ 100
-#define KERNEL_PRINT_TIME_INTERVAL_MS 100
+#define KERNEL_PRINT_TIME_INTERVAL_MS 250
+
+#define KEYBOARD_INPUT_BUFF_SIZE 64
+#define KEY_LISTENERS_SIZE 32
 
 static struct _kernel_globals
 {
-    struct
-    {
+    struct {
         u32 tickFreq;
         ExTick tick;
         u32 utcCacheTick;
         Time cachedUtcTime;
     } timing;
 
-    struct
-    {
+    struct {
         i8 inputBuffer[KEYBOARD_INPUT_BUFF_SIZE];
         u32 inputBufferHead;
+        KappInputListener inputListeners[KEY_LISTENERS_SIZE];
+        u32 inputListenersHead;
     } keyboard;
 
-    struct
-    {
+    struct {
         ScheduleEvent eventBuffer[SCHEDULER_BUFF_SIZE];
         u32 eventBufferHead;
         ScheduleEvent timeoutQueue[SCHEDULER_BUFF_SIZE];
         u32 timeoutQueueHead;
+        ScheduleEvent scheduleQueue[SCHEDULER_BUFF_SIZE];
+        u32 scheduleQueueHead;
         ibool needDefrag;
     } scheduler;
 
-    struct
-    {
+    struct {
         VgaInterface vga;
     } screen;
     
-    struct
-    {
+    struct {
         volatile i8 heapMem[KERNEL_HEAP_SIZE];
         DebugAllocatorState debugInfo;
         Allocator allocator;
-    } heap;    
+    } heap;
+
+    struct
+    {
+        HashMap map;
+    } kernel_apps;
     
 } kGlobal = {
     .timing = {
@@ -58,10 +66,12 @@ static struct _kernel_globals
     },
     .keyboard = {
         .inputBufferHead = 0,
+        .inputListenersHead = 0,
     },
     .scheduler = {
         .eventBufferHead = 0,
         .timeoutQueueHead = 0,
+        .scheduleQueueHead = 0,
         .needDefrag = false,
     },
     .screen = {
@@ -71,6 +81,9 @@ static struct _kernel_globals
         .heapMem = {0},
         .allocator = {0},
         .debugInfo = {0},
+    },
+    .kernel_apps = {
+        .map = {0},
     },
 };
 
