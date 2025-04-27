@@ -18,7 +18,12 @@ Error kapp_shell_main(void)
 
     kapp_screen_set_vga_style(&sb, VGA_COLOR_WHITE, VGA_COLOR_BLUE);
     kapp_screen_clear(&sb);
+    kapp_flush_screen_buffer(&sb);
+
+    kapp_sleep_ms(5000);
+    kapp_screen_write_str(&sb, "Started shell!");
 
     kapp_flush_screen_buffer(&sb);
+    kapp_screen_buffer_deinit(&sb);
     return ERR_OK;
 }

@@ -31,7 +31,7 @@ typedef struct _vga_interface
     u32 xOffset;
     u32 yOffset;
     u8 currentStyle;
-    ibool moveCursor;
+    ibool updateCursor;
 } VgaInterface;
 
 VgaInterface vga_create_interface()
@@ -40,7 +40,7 @@ VgaInterface vga_create_interface()
         .xOffset = 0,
         .yOffset = 0,
         .currentStyle = 0x07,
-        .moveCursor = true,
+        .updateCursor = true,
     };
 }
 
@@ -68,7 +68,7 @@ void vga_scroll_up(VgaInterface* v) {
 }
 
 void __vga_update_cursor(VgaInterface* v) {
-    if (!v->moveCursor) return;
+    if (!v->updateCursor) return;
 
     u16 position = v->yOffset * VGA_COLS + v->xOffset;
     
@@ -171,8 +171,8 @@ u32 __vga_mod_u32(u32 a, u32 b)
 
 void vga_print_uint(VgaInterface* v, const u32 i)
 {
-    ibool cursorUpdate = v->moveCursor;
-    v->moveCursor = false;
+    ibool cursorUpdate = v->updateCursor;
+    v->updateCursor = false;
 
     i8 buf[20];
     i16 idx = 0;
@@ -196,15 +196,15 @@ void vga_print_uint(VgaInterface* v, const u32 i)
         vga_print_char(v, (u8)buf[j]);
     }
 
-    v->moveCursor = cursorUpdate;
+    v->updateCursor = cursorUpdate;
     if (cursorUpdate)
         __vga_update_cursor(v);
 }
 
 void vga_print_int(VgaInterface* v, const i32 i)
 {
-    ibool cursorUpdate = v->moveCursor;
-    v->moveCursor = false;
+    ibool cursorUpdate = v->updateCursor;
+    v->updateCursor = false;
 
     i8 buf[20];
     i32 n = i;
@@ -236,15 +236,15 @@ void vga_print_int(VgaInterface* v, const i32 i)
         vga_print_char(v, (u8)buf[j]);
     }
 
-    v->moveCursor = cursorUpdate;
+    v->updateCursor = cursorUpdate;
     if (cursorUpdate)
         __vga_update_cursor(v);
 }
 
 void vga_print_hex(VgaInterface* v, u32 value)
 {
-    ibool cursorUpdate = v->moveCursor;
-    v->moveCursor = false;
+    ibool cursorUpdate = v->updateCursor;
+    v->updateCursor = false;
 
     vga_print_char(v, '0');
     vga_print_char(v, 'x');
@@ -254,15 +254,15 @@ void vga_print_hex(VgaInterface* v, u32 value)
         vga_print_char(v, (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10));
     }
 
-    v->moveCursor = cursorUpdate;
+    v->updateCursor = cursorUpdate;
     if (cursorUpdate)
         __vga_update_cursor(v);
 }
 
 void vga_print(VgaInterface* v, ConstStr text)
 {
-    ibool cursorUpdate = v->moveCursor;
-    v->moveCursor = false;
+    ibool cursorUpdate = v->updateCursor;
+    v->updateCursor = false;
 
     while (*text)
     {
@@ -270,7 +270,7 @@ void vga_print(VgaInterface* v, ConstStr text)
         ++text;
     }
 
-    v->moveCursor = cursorUpdate;
+    v->updateCursor = cursorUpdate;
     if (cursorUpdate)
         __vga_update_cursor(v);
 }

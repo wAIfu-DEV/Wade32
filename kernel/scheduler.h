@@ -86,10 +86,6 @@ void scheduler_process(void)
     if (kGlobal.scheduler.needDefrag || removedEvents > 0)
         __scheduler_defrag();
 
-    // events with timeoutTick of U32_MAXVAL (done) are phased out
-    // since they are at the end of the array
-    kGlobal.scheduler.eventBufferHead = kGlobal.scheduler.eventBufferHead - removedEvents;
-
     for (u32 i = 0; i < kGlobal.scheduler.timeoutQueueHead; ++i)
     {
         ScheduleEvent ev = kGlobal.scheduler.timeoutQueue[i];

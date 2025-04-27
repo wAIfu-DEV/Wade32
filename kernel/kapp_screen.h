@@ -7,7 +7,7 @@
 
 typedef struct
 {
-    const Buffer vgaBuffer;
+    const HeapBuff vgaBuffer;
     const Rectu8 screenRect;
     Vec2u8 cursor;
     u8 vgaStyle;

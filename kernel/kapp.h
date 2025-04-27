@@ -3,6 +3,7 @@
 #include "vga.h"
 #include "kernel_globals.h"
 #include "kapp_screen.h"
+#include "kernel_process_loop.h"
 
 ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, ibool isFullscreen)
 {
@@ -40,11 +41,13 @@ ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, ibool isFullscreen)
     };
 }
 
+void kapp_screen_buffer_deinit(KappScreenBuffer* sb)
+{
+    kGlobal.heap.allocator.free(&kGlobal.heap.allocator, sb->vgaBuffer.bytes);
+}
+
 void kapp_flush_screen_buffer(KappScreenBuffer* sb)
 {
-    VgaInterface v = kGlobal.screen.vga; // Copy
-    v.moveCursor = false;
-
     for (u32 y = 0; y < sb->screenRect.height; ++y)
     {
         for (u32 x = 0; x < sb->screenRect.width; ++x)
@@ -53,6 +56,30 @@ void kapp_flush_screen_buffer(KappScreenBuffer* sb)
             vga_print_entry_at(*buffMem, x + sb->screenRect.x, y + sb->screenRect.y);
         }
     }
-    v.moveCursor = true;
-    vga_set_cursor_position(&v, sb->cursor.x + sb->screenRect.x, sb->cursor.y + sb->screenRect.y);
+    vga_set_cursor_position(&kGlobal.screen.vga, sb->cursor.x + sb->screenRect.x, sb->cursor.y + sb->screenRect.y);
+}
+
+void __kapp_sleep_callback(void *arg)
+{
+    volatile ibool* flag = (volatile ibool*)arg;
+    *flag = true;
+}
+
+void kapp_yield()
+{
+    kernel_process();
+}
+
+void kapp_sleep_ticks(u32 ticks)
+{
+    volatile ibool done = false;
+    (void)schedule(ticks, __kapp_sleep_callback, (void*)&done, false);
+
+    while (!done)
+        kernel_process();
+}
+
+void kapp_sleep_ms(u32 ms)
+{
+    kapp_sleep_ticks(ms_to_ticks(ms, 50));
 }

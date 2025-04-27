@@ -15,9 +15,9 @@
 #include "keyboard.h"
 #include "scheduler.h"
 #include "kernel_globals.h"
+#include "kernel_process_loop.h"
 
 #include "kernel_apps/shell/shell_main.h"
-
 
 void __kernel_print_time(void* arg0);
 
@@ -78,28 +78,11 @@ void kernel_main(void)
     if (shellErr)
         kernel_panic((u32)shellErr, ErrorToString(shellErr));
 
-    //vga_print(&vga, "user> ");
     while (true)
-    {
-        // Handle keyboard input
-        if (kGlobal.keyboard.inputBufferHead)
-        {
-            for (u32 i = 0; i < kGlobal.keyboard.inputBufferHead; ++i)
-            {
-                vga_print_char(vga, kGlobal.keyboard.inputBuffer[i]);
-            }
-            kGlobal.keyboard.inputBufferHead = 0;
-        }
-
-        // Handle scheduled events
-        scheduler_process();
-
-        __asm__ volatile("hlt");
-    }
+        kernel_process();
 
     kernel_hang();
 }
-
 
 void __kernel_print_time(void* arg0)
 {
@@ -107,10 +90,19 @@ void __kernel_print_time(void* arg0)
     Time t = time_utc();
     HeapStr dateStr = time_to_utc_string(&kGlobal.heap.allocator, t);
 
-    // Draw clock MS/TICKS
     VgaInterface v = kGlobal.screen.vga; // Copy
-    v.moveCursor = false;
+    v.updateCursor = false;
 
+    v.xOffset = 7;
+    v.yOffset = 0;
+
+    u32 i = 0;
+    while (i < VGA_COLS - 7)
+    {
+        vga_print_char(&v, ' ');
+        ++i;
+    }
+    
     v.xOffset = 7;
     v.yOffset = 0;
 
