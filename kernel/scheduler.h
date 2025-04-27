@@ -34,7 +34,7 @@ ibool __scheduler_handle_timeout(u32 i)
     if (kGlobal.scheduler.eventBuffer[i].isRoutine)
     {
         ExTick prevTimeout = kGlobal.scheduler.eventBuffer[i].timeoutTick;
-        extick_add(&prevTimeout, (ExTick){ .cycle = 0, .tick = kGlobal.scheduler.eventBuffer[i].intervalTick });
+        extick_add_ticks(&prevTimeout, kGlobal.scheduler.eventBuffer[i].intervalTick);
         kGlobal.scheduler.eventBuffer[i].timeoutTick = prevTimeout;
     }
     else
@@ -115,7 +115,7 @@ ScheduleEvent schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg
         kernel_panic(KERR_SCHEDULER_OVERFLOW, "Too many scheduled events/routines.");
     
     ExTick timeoutExTick = kGlobal.timing.tick;
-    extick_add(&timeoutExTick, (ExTick){ .cycle = 0, .tick = timeoutTicks });
+    extick_add_ticks(&timeoutExTick, timeoutTicks);
 
     ScheduleEvent ev = (ScheduleEvent){
         .timeoutTick = timeoutExTick,

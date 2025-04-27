@@ -19,6 +19,17 @@ void extick_add(ExTick* a, const ExTick b)
     a->tick = res;
 }
 
+void extick_add_ticks(ExTick* a, u32 b)
+{
+    u32 res = a->tick + b;
+
+    if (res < a->tick || res < b)
+    {
+        ++a->cycle;
+    }
+    a->tick = res;
+}
+
 void extick_sub(ExTick* a, const ExTick b)
 {
     u32 res = a->tick - b.tick;

@@ -8,7 +8,7 @@
 #include "../kernel_globals.h"
 
 static void timer_callback(registers_t regs) {
-    extick_add(&kGlobal.timing.tick, (ExTick){ .cycle=0, .tick=1 });
+    extick_add_ticks(&kGlobal.timing.tick, 1);
 }
 
 void init_timer(u32 freq) {

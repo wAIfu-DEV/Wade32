@@ -25,7 +25,7 @@ IF NOT EXIST "out/interrupt.o" (
 ECHO # built kernel/cpu/interrupt.asm
 
 :: Compile kernel C files
-WSL %BINDIR%/%ARCH%-elf-gcc -ffreestanding -mno-red-zone -c kernel/kernel.c -o out/kernel.o -Wall -Werror -pedantic
+WSL %BINDIR%/%ARCH%-elf-gcc -ffreestanding -mno-red-zone -c kernel/kernel.c -o out/kernel.o -Wall -Werror -pedantic -O3
 
 IF NOT EXIST "out/kernel.o" (
     ECHO # failed to build kernel.c
