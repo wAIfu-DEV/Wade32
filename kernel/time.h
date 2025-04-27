@@ -60,7 +60,8 @@ Time time_utc()
 HeapStr time_to_utc_string(Allocator* alloc, Time t)
 {
     ResultStrBuilder builderRes = strbuilder_init(alloc);
-    if (builderRes.error) return NULL;
+    if (builderRes.error)
+        return NULL;
 
     StringBuilder builder = builderRes.value;
 
@@ -68,7 +69,7 @@ HeapStr time_to_utc_string(Allocator* alloc, Time t)
     ResultOwnedStr r = string_from_uint(alloc, realYear);
     if (r.error)
     {
-        strbuilder_deinit(&builder);
+        strbuilder_deinit(&builder); // Deallocates copied and owned strings
         return NULL;
     };
 

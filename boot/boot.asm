@@ -88,9 +88,6 @@ load_kernel:
 .stage2_loaded:
     popa
 
-    mov bx, MSG_DEBUG 
-    call print
-    call print_nl
     jmp finished_loading_kernel
     ret ; ^^^ had to do this since ret doesn't seem to work here
         ; I don't really like assembly

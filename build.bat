@@ -25,9 +25,7 @@ IF NOT EXIST "out/interrupt.o" (
 ECHO # built kernel/cpu/interrupt.asm
 
 :: Compile kernel C files
-:: -mno-red-zone
-:: -O3 kills it
-WSL %BINDIR%/%ARCH%-elf-gcc -ffreestanding -c kernel/kernel.c -o out/kernel.o -Wall -Werror -pedantic
+WSL %BINDIR%/%ARCH%-elf-gcc -ffreestanding -mno-red-zone -c kernel/kernel.c -o out/kernel.o -Wall -Werror -pedantic
 
 IF NOT EXIST "out/kernel.o" (
     ECHO # failed to build kernel.c
@@ -36,7 +34,8 @@ IF NOT EXIST "out/kernel.o" (
 ECHO # built kernel.c
 
 :: Link kernel to kernel entry
-WSL %BINDIR%/%ARCH%-elf-ld -o out/kernel.bin -Ttext 0x07e00 out/kernel_entry.o out/interrupt.o out/kernel.o --oformat binary
+:: WSL %BINDIR%/%ARCH%-elf-ld -o out/kernel.bin -Ttext 0x07e00 out/kernel_entry.o out/interrupt.o out/kernel.o --oformat binary
+WSL %BINDIR%/%ARCH%-elf-ld -o out/kernel.bin -T kernel/kernel_linker.ld out/kernel_entry.o out/interrupt.o out/kernel.o --oformat binary
 
 IF NOT EXIST "out/kernel.bin" (
     ECHO # failed to link kernel.o

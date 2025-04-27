@@ -6,6 +6,7 @@
     #define __XSTD_ARCH_64BIT 0
 #endif
 
+
 #ifndef true
 #define true 1
 #endif
@@ -31,9 +32,11 @@ typedef unsigned int u32;       // 32bit value representing an unsigned integer 
 #if __XSTD_ARCH_64BIT
 typedef long long i64; // 64bit value representing an integer number.
 typedef unsigned long long u64; // 64bit value representing an unsigned integer number.
+_Static_assert(sizeof(u64) == 8, "u64 must be 8 bytes in 64bit mode.");
 #else
 typedef i32 i64; // 64bit value representing an integer number.
 typedef u32 u64; // 64bit value representing an unsigned integer number.
+_Static_assert(sizeof(u64) == 4, "u64 must be 4 bytes in 32bit mode.");
 #endif
 
 typedef float f32;  // 32bit value representing a decimal number.

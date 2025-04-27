@@ -1,5 +1,6 @@
 #include "../xstd/xstd_core.h"
 #include "../xstd/xstd_alloc_buffer.h"
+#include "../xstd/xstd_alloc_debug.h"
 
 #include "vga.h"
 #include "vga_graphics.h"
@@ -15,13 +16,12 @@
 #include "scheduler.h"
 #include "kernel_globals.h"
 
-#define KERNEL_HEAP_SIZE 4096
-i8 kernelHeapMem[KERNEL_HEAP_SIZE];
+#include "kernel_apps/shell/shell_main.h"
 
-Allocator heapAlloc;
 
 void __kernel_print_time(void* arg0);
 
+__attribute__((externally_visible, used, noinline, visibility("default")))
 void kernel_main(void)
 {
     // Should zero out the BSS
@@ -38,14 +38,21 @@ void kernel_main(void)
 
     vga_print(vga, "> Kernel loaded.\n");
 
-    Buffer heapBuff = (Buffer){.bytes = kernelHeapMem, .size = KERNEL_HEAP_SIZE};
+    Buffer heapBuff = (Buffer){.bytes = (i8*)kGlobal.heap.heapMem, .size = KERNEL_HEAP_SIZE};
     ResultAllocator allocRes = buffer_allocator(heapBuff);
 
     if (allocRes.error)
     {
         kernel_panic(KERR_ALLOC_INIT_FAILURE, "Failed to create kernel heap allocator.");
     }
-    heapAlloc = allocRes.value;
+    Allocator heapAlloc = allocRes.value;
+
+    ResultAllocator debugAllocRes = debug_allocator(&kGlobal.heap.debugInfo, &heapAlloc);
+    if (debugAllocRes.error)
+    {
+        kernel_panic(KERR_ALLOC_INIT_FAILURE, "Failed to create kernel heap debug allocator.");
+    }
+    kGlobal.heap.allocator = debugAllocRes.value;
 
     vga_print(vga, "> Created kernel heap allocator.\n");
 
@@ -63,9 +70,13 @@ void kernel_main(void)
     vga_print(vga, "> Registered keyboard handler, switching to user input mode.\n");
     
     u32 timeout = ms_to_ticks(200, 50);
-    kernel_schedule(timeout, __kernel_print_time, &vga, true);
+    schedule(timeout, __kernel_print_time, &vga, true);
 
     vga_print(vga, "> Scheduled timings printing routine.\n");
+
+    Error shellErr = kapp_shell_main();
+    if (shellErr)
+        kernel_panic((u32)shellErr, ErrorToString(shellErr));
 
     //vga_print(&vga, "user> ");
     while (true)
@@ -81,11 +92,9 @@ void kernel_main(void)
         }
 
         // Handle scheduled events
-        kernel_scheduler_process();
+        scheduler_process();
 
-        __asm__("hlt");
-        __asm__("hlt");
-        __asm__("hlt");
+        __asm__ volatile("hlt");
     }
 
     kernel_hang();
@@ -96,7 +105,7 @@ void __kernel_print_time(void* arg0)
 {
     (void)arg0;
     Time t = time_utc();
-    HeapStr dateStr = time_to_utc_string(&heapAlloc, t);
+    HeapStr dateStr = time_to_utc_string(&kGlobal.heap.allocator, t);
 
     // Draw clock MS/TICKS
     VgaInterface v = kGlobal.screen.vga; // Copy
@@ -110,7 +119,7 @@ void __kernel_print_time(void* arg0)
     if (dateStr)
     {
         vga_print(&v, dateStr);
-        heapAlloc.free(&heapAlloc, dateStr);
+        kGlobal.heap.allocator.free(&kGlobal.heap.allocator, dateStr);
     }
     else
     {
@@ -122,4 +131,9 @@ void __kernel_print_time(void* arg0)
 
     vga_print(&v, ", tk:");
     vga_print_uint(&v, kGlobal.timing.tick);
+
+    vga_print(&v, ", heap:");
+    vga_print_uint(&v, kGlobal.heap.debugInfo.activeBytes);
+    vga_print_char(&v, '/');
+    vga_print_uint(&v, KERNEL_HEAP_SIZE);
 }

@@ -2,7 +2,7 @@
 
 #include "xstd_core.h"
 #include "xstd_alloc.h"
-#include "xstd_io.h"
+//#include "xstd_io.h"
 #include "xstd_hashmap.h"
 
 typedef struct _debug_allocator_state
@@ -28,8 +28,8 @@ void *__debug_alloc(Allocator *this, u64 size)
 
     if (!ptr)
     {
-        if (state->verbosePrint)
-            io_printerrln("[DEBUGALLOC]: Allocation failure.");
+        //if (state->verbosePrint)
+        //    io_printerrln("[DEBUGALLOC]: Allocation failure.");
         return NULL;
     }
 
@@ -43,15 +43,15 @@ void *__debug_alloc(Allocator *this, u64 size)
     Error _ = hashmap_set(&state->ptrAllocMap, mapKey, &size);
     (void)_;
 
-    if (state->verbosePrint)
-    {
-        File f = IoStderr;
-        io_printerr("[DEBUGALLOC]: Allocated ");
-        file_write_uint(&f, size);
-        io_printerr(" bytes @ ");
-        file_write_uint(&f, (u64)ptr);
-        io_printerrln("");
-    }
+    //if (state->verbosePrint)
+    //{
+    //    File f = IoStderr;
+    //    io_printerr("[DEBUGALLOC]: Allocated ");
+    //    file_write_uint(&f, size);
+    //    io_printerr(" bytes @ ");
+    //    file_write_uint(&f, (u64)ptr);
+    //    io_printerrln("");
+    //}
 
     return ptr;
 }
@@ -64,30 +64,42 @@ void *__debug_realloc(Allocator *this, void *block, u64 newSize)
 
     if (!ptr)
     {
-        if (state->verbosePrint)
-            io_printerrln("[DEBUGALLOC]: Reallocation failure.");
+        //if (state->verbosePrint)
+        //    io_printerrln("[DEBUGALLOC]: Reallocation failure.");
         return NULL;
     }
 
     state->totalMallocCalls += 1;
     state->totalAllocBytes += newSize;
     state->activeAllocs += 1;
-    state->activeBytes += newSize;
 
     // ptrAllocMap[ptr] = size
     Buffer mapKey = (Buffer){ .bytes = (i8*)&ptr, .size = sizeof(u64) };
+
+    // This is a yucky stinky hack, compiler too dumb to know that u64 == u32
+    // on 32 bit systems so we give it more useless bytes
+    u8 oldSize[8];
+    Error err = hashmap_get(&state->ptrAllocMap, mapKey, (u64*)&oldSize);
+    //HashMapGetBuffT(u64, &state->ptrAllocMap, mapKey, (u64*)&oldSize);
+    
+    if (err == ERR_OK)
+    {
+        state->activeBytes -= *(u64*)oldSize;
+    }
+    state->activeBytes += newSize;
+
     Error _ = hashmap_set(&state->ptrAllocMap, mapKey, &newSize);
     (void)_;
 
-    if (state->verbosePrint)
-    {
-        File f = IoStderr;
-        io_printerr("[DEBUGALLOC]: Reallocated to ");
-        file_write_uint(&f, newSize);
-        io_printerr(" bytes @ ");
-        file_write_uint(&f, (u64)ptr);
-        io_printerrln("");
-    }
+    //if (state->verbosePrint)
+    //{
+    //    File f = IoStderr;
+    //    io_printerr("[DEBUGALLOC]: Reallocated to ");
+    //    file_write_uint(&f, newSize);
+    //    io_printerr(" bytes @ ");
+    //    file_write_uint(&f, (u64)ptr);
+    //    io_printerrln("");
+    //}
 
     return ptr;
 }
@@ -96,13 +108,13 @@ void __debug_free(Allocator *this, void *block)
 {
     DebugAllocatorState *state = (DebugAllocatorState *)this->_internalState;
 
-    if (state->verbosePrint)
-    {
-        File f = IoStderr;
-        io_printerr("[DEBUGALLOC]: Freed block @ ");
-        file_write_uint(&f, (u64)block);
-        io_printerrln("");
-    }
+    //if (state->verbosePrint)
+    //{
+    //    File f = IoStderr;
+    //    io_printerr("[DEBUGALLOC]: Freed block @ ");
+    //    file_write_uint(&f, (u64)block);
+    //    io_printerrln("");
+    //}
 
     state->totalFreeCalls += 1;
 
@@ -110,6 +122,18 @@ void __debug_free(Allocator *this, void *block)
         state->activeAllocs -= 1;
     
     Buffer mapKey = (Buffer){ .bytes = (i8*)&block, .size = sizeof(u64) };
+
+    // This is a yucky stinky hack, compiler too dumb to know that u64 == u32
+    // on 32 bit systems so we give it more useless bytes
+    u8 allocBytes[8];
+    Error err = hashmap_get(&state->ptrAllocMap, mapKey, (u64*)&allocBytes);
+    //HashMapGetBuffT(u64, &state->ptrAllocMap, mapKey, (u64*)&allocBytes);
+
+    if (err == ERR_OK)
+    {
+        state->activeBytes -= *(u64*)allocBytes;
+    }
+
     Error _ = hashmap_remove(&state->ptrAllocMap, mapKey);
     (void)_;
 
@@ -169,47 +193,47 @@ ResultAllocator debug_allocator(DebugAllocatorState *internalStatePtr, Allocator
     };
 }
 
-void __debug_allocator_print_active(Buffer key, void* value, void* userArg)
-{
-    File f = IoStderr;
+//void __debug_allocator_print_active(Buffer key, void* value, void* userArg)
+//{
+//    File f = IoStderr;
+//
+//    file_write_str(&f, "ptr=");
+//    file_write_uint(&f, *(u64*)key.bytes);
+//    file_write_str(&f, " size=");
+//    file_write_uint(&f, *(u64*)value);
+//    file_write_char(&f, '\n');
+//
+//    file_flush(&f);
+//}
 
-    file_write_str(&f, "ptr=");
-    file_write_uint(&f, *(u64*)key.bytes);
-    file_write_str(&f, " size=");
-    file_write_uint(&f, *(u64*)value);
-    file_write_char(&f, '\n');
-
-    file_flush(&f);
-}
-
-/**
- * @brief Logs debug allocator statistics to stderr
- */
-void debug_allocator_logstats(DebugAllocatorState *state)
-{
-    File f = IoStderr;
-    io_printerrln("[DEBUGALLOC STATS]:");
-    io_printerr("- Total allocs: ");
-    file_write_uint(&f, state->totalMallocCalls);
-    io_printerrln("");
-
-    io_printerr("- Total frees: ");
-    file_write_uint(&f, state->totalFreeCalls);
-    io_printerrln("");
-
-    io_printerr("- Total bytes allocated: ");
-    file_write_uint(&f, state->totalAllocBytes);
-    io_printerrln("");
-
-    io_printerr("- Active allocs: ");
-    file_write_uint(&f, state->activeAllocs);
-    io_printerrln("");
-
-    io_printerr("- Active bytes:\n");
-    hashmap_for_each(&state->ptrAllocMap, __debug_allocator_print_active, NULL);
-
-    if (state->activeAllocs == 0)
-    {
-        io_printerrln("none");
-    }
-}
+///**
+// * @brief Logs debug allocator statistics to stderr
+// */
+//void debug_allocator_logstats(DebugAllocatorState *state)
+//{
+//    File f = IoStderr;
+//    io_printerrln("[DEBUGALLOC STATS]:");
+//    io_printerr("- Total allocs: ");
+//    file_write_uint(&f, state->totalMallocCalls);
+//    io_printerrln("");
+//
+//    io_printerr("- Total frees: ");
+//    file_write_uint(&f, state->totalFreeCalls);
+//    io_printerrln("");
+//
+//    io_printerr("- Total bytes allocated: ");
+//    file_write_uint(&f, state->totalAllocBytes);
+//    io_printerrln("");
+//
+//    io_printerr("- Active allocs: ");
+//    file_write_uint(&f, state->activeAllocs);
+//    io_printerrln("");
+//
+//    io_printerr("- Active bytes:\n");
+//    hashmap_for_each(&state->ptrAllocMap, __debug_allocator_print_active, NULL);
+//
+//    if (state->activeAllocs == 0)
+//    {
+//        io_printerrln("none");
+//    }
+//}

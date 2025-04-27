@@ -1,9 +1,11 @@
 [bits 32]
 ; From: https://github.com/cfenollosa/os-tutorial
 
-[extern kernel_main] ; Define calling point. Must have same name as kernel.c 'main' function
-;jmp $ ; TEMP FOR DEBUG
-call kernel_main ; Calls the C function. The linker will know where it is placed in memory
-jmp $
+[section .text.kernel_entry] ; << mark into special section
+global _start
+extern kernel_main
 
-db "KERNEL ENTRY END"
+_start:
+    ;jmp $ ; TEMP FOR DEBUG
+    call kernel_main
+    jmp $

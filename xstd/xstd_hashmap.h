@@ -7,6 +7,7 @@
 #include "xstd_result.h"
 #include "xstd_error.h"
 
+#if __XSTD_ARCH_64BIT
 u64 __hashmap_fnv1a64(const void *key, u64 len)
 {
     const u8 *data = (const u8 *)key;
@@ -17,6 +18,18 @@ u64 __hashmap_fnv1a64(const void *key, u64 len)
     
     return hash;
 }
+#else
+u32 __hashmap_fnv1a32(const void *key, u32 len)
+{
+    const u8 *data = (const u8 *)key;
+
+    u32 hash = 0x811C9DC5U;
+    for (u32 i = 0; i < len; ++i)
+        hash = (hash ^ data[i]) * 0x01000193U;
+
+    return hash;
+}
+#endif
 
 typedef struct _hashmap_entry
 {
@@ -159,6 +172,17 @@ void hashmap_deinit(HashMap *map)
     *map = (HashMap){0};
 }
 
+void __hashmap_memcpy(HashMap *h, const void *srcPtr, void *dstPtr)
+{
+    u64 rest = h->_valueSize;
+
+    i8 *d = (i8 *)dstPtr;
+    const i8 *s = (i8 *)srcPtr;
+
+    while (rest--)
+        *d++ = *s++;
+}
+
 ibool __hashmap_key_equals(Buffer a, Buffer b)
 {
     if (a.size != b.size)
@@ -213,9 +237,7 @@ Error __hashmap_set(HashMap *map, Buffer key, const void *value, u64 hash)
                     return ERR_OUT_OF_MEMORY;
             }
 
-            for (u64 i = 0; i < map->_valueSize; ++i)
-                ((u8 *)entry->_value)[i] = ((const u8 *)value)[i];
-            
+            __hashmap_memcpy(map, value, entry->_value);
             return ERR_OK;
         }
         entry = entry->_next;
@@ -310,14 +332,20 @@ Error hashmap_set(HashMap *map, Buffer key, const void *value)
         if (err != ERR_OK)
             return err;
     }
-    return __hashmap_set(map, key, value, __hashmap_fnv1a64(key.bytes, key.size));
+    return __hashmap_set(map, key, value,
+        #if __XSTD_ARCH_64BIT
+        __hashmap_fnv1a64(key.bytes, key.size)
+        #else
+        __hashmap_fnv1a32(key.bytes, key.size)
+        #endif
+    );
 }
 
 #define HashMapSetBuffT(T, mapPtr, keyBuff, valPtr) \
     { \
         T *mapItemTypeCheck = (valPtr); \
         (void)mapItemTypeCheck; \
-        hashmap_set((mapPtr), (keyBuff), (valPtr)) \
+        hashmap_set((mapPtr), (keyBuff), (valPtr)); \
     }
 
 /**
@@ -341,7 +369,7 @@ Error hashmap_set_str(HashMap *map, ConstStr key, const void *value)
     { \
         T *mapItemTypeCheck = (valPtr); \
         (void)mapItemTypeCheck; \
-        hashmap_set_str((mapPtr), (keyStr), (valPtr)) \
+        hashmap_set_str((mapPtr), (keyStr), (valPtr)); \
     }
 
 /**
@@ -359,7 +387,12 @@ Error hashmap_get(HashMap *map, Buffer key, void *outValue)
     if (!map || !map->_buckets || !key.bytes)
         return ERR_INVALID_PARAMETER;
     
+    #if __XSTD_ARCH_64BIT
     u64 hash = __hashmap_fnv1a64(key.bytes, key.size);
+    #else
+    u64 hash = __hashmap_fnv1a32(key.bytes, key.size);
+    #endif
+
     u64 idx = __hashmap_bucket_idx(map, hash);
 
     if (__hashmap_is_invalid_idx(map, idx))
@@ -373,8 +406,9 @@ Error hashmap_get(HashMap *map, Buffer key, void *outValue)
         if (entry->_hash == hash && __hashmap_key_equals(entry->_key, key))
         {
             if (outValue && entry->_value)
-                for (u64 i = 0; i < map->_valueSize; ++i)
-                    ((u8 *)outValue)[i] = ((u8 *)entry->_value)[i];
+            {
+                __hashmap_memcpy(map, entry->_value, outValue);
+            }
             return ERR_OK;
         }
         entry = entry->_next;
@@ -386,7 +420,7 @@ Error hashmap_get(HashMap *map, Buffer key, void *outValue)
     { \
         T *mapItemTypeCheck = (outPtr); \
         (void)mapItemTypeCheck; \
-        hashmap_get((mapPtr), (keyBuff), (outPtr)) \
+        hashmap_get((mapPtr), (keyBuff), (outPtr)); \
     }
 
 /**
@@ -423,7 +457,7 @@ Error hashmap_get_str(HashMap *map, ConstStr key, void *outValue)
     { \
         T *mapItemTypeCheck = (outPtr); \
         (void)mapItemTypeCheck; \
-        hashmap_get_str((mapPtr), (keyStr), (outPtr)) \
+        hashmap_get_str((mapPtr), (keyStr), (outPtr)); \
     }
 
 /**
@@ -438,7 +472,12 @@ Error hashmap_remove(HashMap *map, Buffer key)
     if (!map || !map->_buckets || !key.bytes)
         return ERR_INVALID_PARAMETER;
     
+    #if __XSTD_ARCH_64BIT
     u64 hash = __hashmap_fnv1a64(key.bytes, key.size);
+    #else
+    u64 hash = __hashmap_fnv1a32(key.bytes, key.size);
+    #endif
+
     u64 idx = __hashmap_bucket_idx(map, hash);
 
     if (__hashmap_is_invalid_idx(map, idx))

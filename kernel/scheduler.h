@@ -55,6 +55,7 @@ u32 __scheduler_check_timeout_and_queue(void)
 
     if (ret > 0)
         kGlobal.scheduler.needDefrag = true;
+    
     return ret;
 }
 
@@ -78,7 +79,7 @@ void __scheduler_defrag(void)
  * @brief Processes timed out scheduled events and defragments the scheduler on changes.
  * 
  */
-void kernel_scheduler_process(void)
+void scheduler_process(void)
 {
     u32 removedEvents = __scheduler_check_timeout_and_queue();
 
@@ -107,20 +108,25 @@ void kernel_scheduler_process(void)
  * @param callback Callback called by scheduler once event timed out.
  * @param arg0 Argument to pass to callback, use NULL if not args are expected.
  * @param isRoutine If true, will reschedule on timeout.
+ * 
+ * @retval ScheduleEvent use it to unschedule the event, if needed
  */
-void kernel_schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg0, ibool isRoutine)
+ScheduleEvent schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg0, ibool isRoutine)
 {
     if (kGlobal.scheduler.eventBufferHead >= SCHEDULER_BUFF_SIZE)
         kernel_panic(KERR_SCHEDULER_OVERFLOW, "Too many scheduled events/routines.");
 
-    kGlobal.scheduler.eventBuffer[kGlobal.scheduler.eventBufferHead] = (ScheduleEvent){
+    ScheduleEvent ev = (ScheduleEvent){
         .timeoutTick = kGlobal.timing.tick + timeoutTicks,
         .intervalTick = timeoutTicks,
         .arg0 = arg0,
         .callback = callback,
         .isRoutine = isRoutine,
     };
+
+    kGlobal.scheduler.eventBuffer[kGlobal.scheduler.eventBufferHead] = ev;
     ++kGlobal.scheduler.eventBufferHead;
+    return ev;
 }
 
 /**
@@ -131,26 +137,28 @@ void kernel_schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg0,
  * 
  * Example:
  * ```c
- * kernel_schedule(10, my_callback, NULL, false);
+ * schedule(10, my_callback, NULL, false);
  * // This will remove the event
- * kernel_unschedule(10, my_callback, NULL, false);
+ * unschedule(10, my_callback, NULL, false);
  * // This won't
- * kernel_unschedule(11, my_callback, NULL, false);
+ * unschedule(11, my_callback, NULL, false);
  * ```
  * 
- * @param timeoutTicks 
- * @param callback 
- * @param arg0 
+ * @param timeoutTicks
+ * @param callback
+ * @param arg0
  * @param isRoutine
  */
-void kernel_unschedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg0, ibool isRoutine)
+void unschedule(ScheduleEvent ev)
 {
     for (u32 i = 0; i < kGlobal.scheduler.eventBufferHead; ++i)
     {
-        if (kGlobal.scheduler.eventBuffer[i].callback        == callback
-            && kGlobal.scheduler.eventBuffer[i].arg0         == arg0
-            && kGlobal.scheduler.eventBuffer[i].intervalTick == timeoutTicks
-            && kGlobal.scheduler.eventBuffer[i].isRoutine    == isRoutine)
+        ScheduleEvent *iev = &kGlobal.scheduler.eventBuffer[i];
+
+        if (iev->callback == ev.callback
+            && iev->arg0 == ev.arg0
+            && iev->intervalTick == ev.intervalTick
+            && iev->isRoutine == ev.isRoutine)
         {
             kGlobal.scheduler.eventBuffer[i].timeoutTick = U32_MAXVAL;
             kGlobal.scheduler.eventBuffer[i].isRoutine = false;

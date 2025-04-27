@@ -3,7 +3,7 @@
 #include "../xstd/xstd_core.h"
 #include "bios_io.h"
 
-#define VGA_MEM (i8*)0xb8000
+#define VGA_MEM (volatile i8*)0xb8000
 
 #define VGA_ROWS 25
 #define VGA_COLS 80
@@ -55,7 +55,7 @@ u16 __vga_entry(char c, u8 color)
 }
 
 void vga_scroll_up(VgaInterface* v) {
-    u16 *vgaMem = (u16 *)VGA_MEM;
+    volatile u16 *vgaMem = (u16 *)VGA_MEM;
     const u16 blank = __vga_entry(' ', v->currentStyle);
     
     for (u32 i = 0; i < (VGA_ROWS - 1) * VGA_COLS; i++) {
@@ -100,9 +100,17 @@ void vga_print_char_at(u8 c, u8 style, u32 x, u32 y)
 {
     if (x >= VGA_COLS || y >= VGA_ROWS) return;
 
-    i8* videoMem = VGA_MEM + (((y * 80) + (x)) * 2);
+    volatile i8* videoMem = VGA_MEM + (((y * 80) + (x)) * 2);
     videoMem[0] = c;
     videoMem[1] = style;
+}
+
+void vga_print_entry_at(u16 entry, u32 x, u32 y)
+{
+    if (x >= VGA_COLS || y >= VGA_ROWS) return;
+
+    volatile u16* videoMem = ((volatile u16*)VGA_MEM) + ((y * 80) + (x));
+    *videoMem = entry;
 }
 
 void vga_print_char(VgaInterface* v, u8 c)
@@ -163,6 +171,9 @@ u32 __vga_mod_u32(u32 a, u32 b)
 
 void vga_print_uint(VgaInterface* v, const u32 i)
 {
+    ibool cursorUpdate = v->moveCursor;
+    v->moveCursor = false;
+
     i8 buf[20];
     i16 idx = 0;
     u32 n = i;
@@ -184,10 +195,17 @@ void vga_print_uint(VgaInterface* v, const u32 i)
     {
         vga_print_char(v, (u8)buf[j]);
     }
+
+    v->moveCursor = cursorUpdate;
+    if (cursorUpdate)
+        __vga_update_cursor(v);
 }
 
 void vga_print_int(VgaInterface* v, const i32 i)
 {
+    ibool cursorUpdate = v->moveCursor;
+    v->moveCursor = false;
+
     i8 buf[20];
     i32 n = i;
     i16 idx = 0;
@@ -217,10 +235,17 @@ void vga_print_int(VgaInterface* v, const i32 i)
     {
         vga_print_char(v, (u8)buf[j]);
     }
+
+    v->moveCursor = cursorUpdate;
+    if (cursorUpdate)
+        __vga_update_cursor(v);
 }
 
 void vga_print_hex(VgaInterface* v, u32 value)
 {
+    ibool cursorUpdate = v->moveCursor;
+    v->moveCursor = false;
+
     vga_print_char(v, '0');
     vga_print_char(v, 'x');
 
@@ -228,22 +253,33 @@ void vga_print_hex(VgaInterface* v, u32 value)
         u8 nibble = (value >> (i * 4)) & 0xF;
         vga_print_char(v, (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10));
     }
+
+    v->moveCursor = cursorUpdate;
+    if (cursorUpdate)
+        __vga_update_cursor(v);
 }
 
 void vga_print(VgaInterface* v, ConstStr text)
 {
+    ibool cursorUpdate = v->moveCursor;
+    v->moveCursor = false;
+
     while (*text)
     {
         vga_print_char(v, *text);
         ++text;
     }
+
+    v->moveCursor = cursorUpdate;
+    if (cursorUpdate)
+        __vga_update_cursor(v);
 }
 
 void vga_clear_screen(VgaInterface* v) {
-    u16 *vgaMem = (u16 *)VGA_MEM;
+    volatile u16 *vgaMem = (u16 *)VGA_MEM;
     const u16 blank = __vga_entry(' ', v->currentStyle);
     
-    for (u32 i = 0; i < 80 * 25; i++) {
+    for (u32 i = 0; i < 80 * 25; ++i) {
         vgaMem[i] = blank;
     }
     vga_set_cursor_position(v, 0, 0);

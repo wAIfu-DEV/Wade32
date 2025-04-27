@@ -1,13 +1,15 @@
 #pragma once
 
 #include "../xstd/xstd_core.h"
+#include "../xstd/xstd_alloc.h"
 
 #include "time_type.h"
 #include "schedule_event_type.h"
 
+#define KERNEL_HEAP_SIZE (4096 * 2)
 #define KEYBOARD_INPUT_BUFF_SIZE 256
 
-struct _kernel_globals
+static struct _kernel_globals
 {
     struct
     {
@@ -37,6 +39,12 @@ struct _kernel_globals
         VgaInterface vga;
     } screen;
     
+    struct
+    {
+        volatile i8 heapMem[KERNEL_HEAP_SIZE];
+        DebugAllocatorState debugInfo;
+        Allocator allocator;
+    } heap;    
     
 } kGlobal = {
     .timing = {
@@ -55,6 +63,11 @@ struct _kernel_globals
     },
     .screen = {
         .vga = {0},
-    }
+    },
+    .heap = {
+        .heapMem = {0},
+        .allocator = {0},
+        .debugInfo = {0},
+    },
 };
 
