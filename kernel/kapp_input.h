@@ -5,9 +5,10 @@
 #include "kernel_errors.h"
 #include "kernel_panic.h"
 
-void __kapp_keypress_callback(KappInputBuff* ib, i8 c)
+void __kapp_keypress_callback(KappInputBuff* ib, const i8 c)
 {
-    if (ib->buffHead >= KAPP_INPUT_BUFF_SIZE) ib->buffHead = 0;
+    if (ib->buffHead >= KAPP_INPUT_BUFF_SIZE)
+        ib->buffHead = 0;
 
     ib->buff[ib->buffHead] = c;
     ++ib->buffHead;

@@ -10,7 +10,7 @@ void kernel_hang(void)
     }
 }
 
-void kernel_panic(u32 errorCode, ConstStr message)
+void kernel_panic(const u32 errorCode, ConstStr message)
 {
     VgaInterface v = vga_create_interface();
     vga_set_style(&v, VGA_COLOR_WHITE, VGA_COLOR_BLUE);

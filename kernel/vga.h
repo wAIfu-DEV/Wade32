@@ -30,11 +30,11 @@ typedef struct _vga_interface
 {
     u32 xOffset;
     u32 yOffset;
-    u8 currentStyle;
+    i8 currentStyle;
     ibool updateCursor;
 } VgaInterface;
 
-VgaInterface vga_create_interface()
+VgaInterface vga_create_interface(void)
 {
     return (VgaInterface){
         .xOffset = 0,
@@ -44,17 +44,17 @@ VgaInterface vga_create_interface()
     };
 }
 
-void vga_set_style(VgaInterface*v, u8 foreground, u8 background)
+void vga_set_style(VgaInterface*v, const i8 foreground, const i8 background)
 {
     v->currentStyle = foreground | (background << 4);
 }
 
-u16 __vga_entry(char c, u8 color)
+u16 __vga_entry(const i8 c, const i8 color)
 {
     return (u16)c | ((u16)color << 8);
 }
 
-void vga_scroll_up(VgaInterface* v) {
+void vga_scroll_up(const VgaInterface* v) {
     volatile u16 *vgaMem = (u16 *)VGA_MEM;
     const u16 blank = __vga_entry(' ', v->currentStyle);
     
@@ -67,10 +67,10 @@ void vga_scroll_up(VgaInterface* v) {
     }
 }
 
-void __vga_update_cursor(VgaInterface* v) {
+void __vga_update_cursor(const VgaInterface* v) {
     if (!v->updateCursor) return;
 
-    u16 position = v->yOffset * VGA_COLS + v->xOffset;
+    const u16 position = (u16)(v->yOffset * VGA_COLS + v->xOffset);
     
     bios_outb(0x3D4, 0x0F);
     bios_outb(0x3D5, (u8)(position & 0xFF));
@@ -78,7 +78,7 @@ void __vga_update_cursor(VgaInterface* v) {
     bios_outb(0x3D5, (u8)((position >> 8) & 0xFF));
 }
 
-void vga_set_cursor_position(VgaInterface* v, u32 x, u32 y) {
+void vga_set_cursor_position(VgaInterface* v, const u32 x, const u32 y) {
     v->xOffset = x;
     v->yOffset = y;
     __vga_update_cursor(v);
@@ -96,7 +96,7 @@ void __vga_newline(VgaInterface* v)
     __vga_update_cursor(v);
 }
 
-void vga_print_char_at(u8 c, u8 style, u32 x, u32 y)
+void vga_print_char_at(const i8 c, const i8 style, const u32 x, const u32 y)
 {
     if (x >= VGA_COLS || y >= VGA_ROWS) return;
 
@@ -105,7 +105,7 @@ void vga_print_char_at(u8 c, u8 style, u32 x, u32 y)
     videoMem[1] = style;
 }
 
-void vga_print_entry_at(u16 entry, u32 x, u32 y)
+void vga_print_entry_at(const u16 entry, const u32 x, const u32 y)
 {
     if (x >= VGA_COLS || y >= VGA_ROWS) return;
 
@@ -113,7 +113,7 @@ void vga_print_entry_at(u16 entry, u32 x, u32 y)
     *videoMem = entry;
 }
 
-void vga_print_char(VgaInterface* v, u8 c)
+void vga_print_char(VgaInterface* v, const i8 c)
 {
     if (c == '\n') 
     {
@@ -140,7 +140,7 @@ void vga_print_char(VgaInterface* v, u8 c)
     }
 }
 
-i8 __vga_digit_to_char(u32 i)
+i8 __vga_digit_to_char(const u32 i)
 {
     if (i > 9)
         return 0;
@@ -148,7 +148,7 @@ i8 __vga_digit_to_char(u32 i)
     return "0123456789"[i];
 }
 
-u32 __vga_div_u32(u32 dividend, u32 divisor) {
+u32 __vga_div_u32(u32 dividend, const u32 divisor) {
     if (divisor == 0)
         return 0; // You might want to kernel panic or assert here
 
@@ -164,7 +164,7 @@ u32 __vga_div_u32(u32 dividend, u32 divisor) {
     return quotient;
 }
 
-u32 __vga_mod_u32(u32 a, u32 b)
+u32 __vga_mod_u32(const u32 a, const u32 b)
 {
     return a - (b * __vga_div_u32(a, b));
 }
@@ -193,7 +193,7 @@ void vga_print_uint(VgaInterface* v, const u32 i)
 
     for (i16 j = idx - 1; j >= 0; --j)
     {
-        vga_print_char(v, (u8)buf[j]);
+        vga_print_char(v, buf[j]);
     }
 
     v->updateCursor = cursorUpdate;
@@ -233,7 +233,7 @@ void vga_print_int(VgaInterface* v, const i32 i)
 
     for (i16 j = idx - 1; j >= 0; --j)
     {
-        vga_print_char(v, (u8)buf[j]);
+        vga_print_char(v, buf[j]);
     }
 
     v->updateCursor = cursorUpdate;
@@ -241,7 +241,7 @@ void vga_print_int(VgaInterface* v, const i32 i)
         __vga_update_cursor(v);
 }
 
-void vga_print_hex(VgaInterface* v, u32 value)
+void vga_print_hex(VgaInterface* v, const u32 value)
 {
     ibool cursorUpdate = v->updateCursor;
     v->updateCursor = false;
@@ -251,7 +251,7 @@ void vga_print_hex(VgaInterface* v, u32 value)
 
     for (i32 i = 7; i >= 0; --i) {
         u8 nibble = (value >> (i * 4)) & 0xF;
-        vga_print_char(v, (nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10));
+        vga_print_char(v, (i8)((nibble < 10) ? ('0' + nibble) : ('A' + nibble - 10)));
     }
 
     v->updateCursor = cursorUpdate;

@@ -4,21 +4,21 @@
 
 #include "vga.h"
 
-#define VGA_GFX_BORDER_VERT (u8)186
-#define VGA_GFX_BORDER_HORI (u8)205
-#define VGA_GFX_BORDER_TOPL (u8)201
-#define VGA_GFX_BORDER_TOPR (u8)187
-#define VGA_GFX_BORDER_BOTL (u8)200
-#define VGA_GFX_BORDER_BOTR (u8)188
+#define VGA_GFX_BORDER_VERT (i8)186
+#define VGA_GFX_BORDER_HORI (i8)205
+#define VGA_GFX_BORDER_TOPL (i8)201
+#define VGA_GFX_BORDER_TOPR (i8)187
+#define VGA_GFX_BORDER_BOTL (i8)200
+#define VGA_GFX_BORDER_BOTR (i8)188
 
-#define VGA_GFX_LINE_VERT (u8)179
-#define VGA_GFX_LINE_HORI (u8)196
-#define VGA_GFX_LINE_TOPL (u8)218
-#define VGA_GFX_LINE_TOPR (u8)191
-#define VGA_GFX_LINE_BOTL (u8)192
-#define VGA_GFX_LINE_BOTR (u8)217
+#define VGA_GFX_LINE_VERT (i8)179
+#define VGA_GFX_LINE_HORI (i8)196
+#define VGA_GFX_LINE_TOPL (i8)218
+#define VGA_GFX_LINE_TOPR (i8)191
+#define VGA_GFX_LINE_BOTL (i8)192
+#define VGA_GFX_LINE_BOTR (i8)217
 
-void vga_gfx_draw_line(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight, ibool isHorizontal)
+void vga_gfx_draw_line(VgaInterface* v, const Vec2u8 topLeft, const Vec2u8 botRight, const ibool isHorizontal)
 {
     if (isHorizontal)
     {
@@ -40,7 +40,7 @@ void vga_gfx_draw_line(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight, ibool i
     }
 }
 
-void vga_gfx_draw_border_line(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight, ibool isHorizontal)
+void vga_gfx_draw_border_line(VgaInterface* v, const Vec2u8 topLeft, const Vec2u8 botRight, const ibool isHorizontal)
 {
     if (isHorizontal)
     {
@@ -62,7 +62,7 @@ void vga_gfx_draw_border_line(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight, 
     }
 }
 
-void vga_gfx_draw_rect(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight)
+void vga_gfx_draw_rect(VgaInterface* v, const Vec2u8 topLeft, const Vec2u8 botRight)
 {
     // Draw corners
     vga_print_char_at(VGA_GFX_LINE_TOPL, v->currentStyle, topLeft.x, topLeft.y);
@@ -86,7 +86,7 @@ void vga_gfx_draw_rect(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight)
 }
 
 
-void vga_gfx_draw_border_rect(VgaInterface* v, Vec2u8 topLeft, Vec2u8 botRight)
+void vga_gfx_draw_border_rect(VgaInterface* v, const Vec2u8 topLeft, const Vec2u8 botRight)
 {
     // Draw corners
     vga_print_char_at(VGA_GFX_BORDER_TOPL, v->currentStyle, topLeft.x, topLeft.y);

@@ -11,7 +11,7 @@
 
 #include "schedule_event_type.h"
 
-void __scheduler_enqueue_timedout(ScheduleEvent ev)
+void __scheduler_enqueue_timedout(const ScheduleEvent ev)
 {
     if (kGlobal.scheduler.timeoutQueueHead >= SCHEDULER_BUFF_SIZE)
         kernel_panic(KERR_SCHEDULER_OVERFLOW, "Too many timed out scheduler events.");
@@ -20,7 +20,7 @@ void __scheduler_enqueue_timedout(ScheduleEvent ev)
     ++kGlobal.scheduler.timeoutQueueHead;
 }
 
-void __scheduler_enqueue(ScheduleEvent ev)
+void __scheduler_enqueue(const ScheduleEvent ev)
 {
     if (kGlobal.scheduler.scheduleQueueHead >= SCHEDULER_BUFF_SIZE)
         kernel_panic(KERR_SCHEDULER_OVERFLOW, "Too many events/routines in schedule queue.");
@@ -31,7 +31,7 @@ void __scheduler_enqueue(ScheduleEvent ev)
 
 // Checks for timed out events, calls `__scheduler_enqueue_timedout` on timeout
 // returns true on events to remove, false on element to keep
-ibool __scheduler_handle_timeout(u32 i)
+ibool __scheduler_handle_timeout(const u32 i)
 {
     if (kGlobal.scheduler.eventBuffer[i].timeoutTick.cycle == U32_MAXVAL)
         return true;
@@ -56,11 +56,11 @@ ibool __scheduler_handle_timeout(u32 i)
     return true;
 }
 
-void __scheduler_check_timeout_sorted()
+void __scheduler_check_timeout_sorted(void)
 {
     for (u32 i = 0; i < kGlobal.scheduler.eventBufferHead; ++i)
     {
-        ExTick evTick = kGlobal.scheduler.eventBuffer[i].timeoutTick;
+        const ExTick evTick = kGlobal.scheduler.eventBuffer[i].timeoutTick;
         if (extick_greater_than(evTick, kGlobal.timing.tick))
         {
             // Early return, if scheduler is correctly sorted then all
@@ -104,9 +104,9 @@ void __schedule_move_queued_to_buffer(void)
     kGlobal.scheduler.scheduleQueueHead = 0;
 }
 
-void __schedule_sort_ascending()
+void __schedule_sort_ascending(void)
 {
-    u32 n = kGlobal.scheduler.eventBufferHead;
+    const u32 n = kGlobal.scheduler.eventBufferHead;
     ScheduleEvent* arr = (ScheduleEvent*)kGlobal.scheduler.eventBuffer;
 
     for (u32 i = 1; i < n; ++i)
@@ -115,7 +115,7 @@ void __schedule_sort_ascending()
         u32 j = i - 1;
 
         // Move elements greater than key one position ahead
-        while (j >= 0 && extick_greater_than(arr[j].timeoutTick, ev.timeoutTick))
+        while (j != U32_MAXVAL && extick_greater_than(arr[j].timeoutTick, ev.timeoutTick))
         {
             arr[j+1] = arr[j];
             --j;
@@ -124,7 +124,7 @@ void __schedule_sort_ascending()
     }
 }
 
-void __scheduler_handle_queued_timedout()
+void __scheduler_handle_queued_timedout(void)
 {
     for (u32 i = 0; i < kGlobal.scheduler.timeoutQueueHead; ++i)
     {
@@ -172,7 +172,7 @@ void scheduler_process(void)
  * 
  * @retval ScheduleEvent use it to unschedule the event, if needed
  */
-ScheduleEvent schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg0, ibool isRoutine)
+ScheduleEvent schedule(const u32 timeoutTicks, void (*const callback)(void* arg0), void* const arg0, const ibool isRoutine)
 {
     ExTick timeoutExTick = kGlobal.timing.tick;
     extick_add_ticks(&timeoutExTick, timeoutTicks);
@@ -190,7 +190,7 @@ ScheduleEvent schedule(u32 timeoutTicks, void (*callback)(void* arg0), void* arg
     return ev;
 }
 
-void __scheduler_invalidate_in_buffer(ScheduleEvent ev, ScheduleEvent* buffer, u32 size)
+void __scheduler_invalidate_in_buffer(const ScheduleEvent ev, ScheduleEvent* buffer, const u32 size)
 {
     for (u32 i = 0; i < size; ++i)
     {
@@ -229,7 +229,7 @@ void __scheduler_invalidate_in_buffer(ScheduleEvent ev, ScheduleEvent* buffer, u
  * @param arg0
  * @param isRoutine
  */
-void unschedule(ScheduleEvent ev)
+void unschedule(const ScheduleEvent ev)
 {
     __scheduler_invalidate_in_buffer(ev, kGlobal.scheduler.eventBuffer, kGlobal.scheduler.eventBufferHead);
     __scheduler_invalidate_in_buffer(ev, kGlobal.scheduler.scheduleQueue, kGlobal.scheduler.scheduleQueueHead);

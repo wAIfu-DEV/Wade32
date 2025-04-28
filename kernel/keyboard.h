@@ -42,7 +42,8 @@ const i8 scancode_to_ascii[SCANCODE_TO_ASCII_SIZE] = {
     0,  /* All other keys are undefined */
 };
 
-void keyboard_handler(registers_t regs) {
+void keyboard_handler(registers_t regs)
+{
     (void)regs;
 
     u8 scancode = bios_inb(0x60);

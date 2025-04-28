@@ -10,31 +10,31 @@
 #include "time_type.h"
 #include "kernel_globals.h"
 
-u32 ticks_to_ms(u32 ticks)
+u32 ticks_to_ms(const u32 ticks)
 {
     return (ticks * 1000) / kGlobal.timing.tickFreq;
 }
 
-u32 ms_to_ticks(u32 ms)
+u32 ms_to_ticks(const u32 ms)
 {
     return (ms * kGlobal.timing.tickFreq) / 1000;
 }
 
-u8 read_rtc_register(u8 reg) {
+u8 read_rtc_register(const u8 reg) {
     bios_outb(0x70, reg);
     return bios_inb(0x71);
 }
 
-ibool is_rtc_time_updating() {
+ibool is_rtc_time_updating(void) {
     bios_outb(0x70, 0x0A);
-    return bios_inb(0x71) & 0x80;
+    return (ibool)(bios_inb(0x71) & 0x80);
 }
 
-u8 bcd_to_binary(u8 bcd) {
-    return ((bcd >> 4) * 10) + (bcd & 0x0F);
+u8 bcd_to_binary(const u8 bcd) {
+    return (u8)(((bcd >> 4) * 10) + (bcd & 0x0F));
 }
 
-Time time_utc()
+Time time_utc(void)
 {
     // If last time is within reasonable range, skip waiting and return last time.
     // Unsure if needed, but should prevent blocking in most cases considering this
@@ -59,7 +59,7 @@ Time time_utc()
     return kGlobal.timing.cachedUtcTime;
 }
 
-HeapStr time_to_utc_string(Allocator* alloc, Time t)
+HeapStr time_to_utc_string(Allocator* alloc, const Time t)
 {
     HeapStr str = alloc->alloc(alloc, 20);
 
@@ -76,7 +76,7 @@ HeapStr time_to_utc_string(Allocator* alloc, Time t)
     BuffWriter buffWriter = writerRes.value;
     Writer *writer = (Writer*)&buffWriter;
 
-    u32 realYear = (u32)t.year + ((u32)t.century * 100);
+    const u32 realYear = (u32)t.year + ((u32)t.century * 100);
     err = writer_write_uint(writer, realYear);
     if (err) goto cleanup;
 

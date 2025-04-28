@@ -4,7 +4,7 @@
 #include "../../xstd/xstd_hashmap.h"
 #include "../kapp_entry_type.h"
 
-#define KAPPS_REG_SIZE 1
+#define KAPPS_REG_SIZE 2
 
 typedef struct
 {
@@ -12,13 +12,18 @@ typedef struct
     KappEntrypoint entryPoint;
 } KappRegEntry;
 
-Error kapp_shell(void);
+KappReturn kapp_shell(void);
+KappReturn kapp_sysinfo(void);
 
 static const KappRegEntry kappRegistry[KAPPS_REG_SIZE] = {
     {
         .appName = "shell",
         .entryPoint = kapp_shell,
     },
+    {
+        .appName = "sysinfo",
+        .entryPoint = kapp_sysinfo,
+    }
 };
 
 

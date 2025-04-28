@@ -86,9 +86,14 @@ void kernel_main(void)
     vga_clear_screen(vga);
     vga_print(vga, "Wade32\n\n");
 
-    err = kapp_exec("shell");
-    if (err)
-        kernel_panic((u32)err, ErrorToString(err));
+    ResultKEP kepRes = kapp_get_entrypoint("shell");
+    if (kepRes.error)
+        kernel_panic(KERR_NO_SHELL, "Failed to find kernel shell.");
+
+    KappEntrypoint shell = kepRes.value;
+    KappReturn ret = shell();
+    if (ret.errcode)
+        kernel_panic((u32)ret.errcode, ErrorToString(ret.errcode));
 
     while (true)
         kernel_process();

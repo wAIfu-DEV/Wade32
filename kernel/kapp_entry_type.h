@@ -2,4 +2,10 @@
 
 #include "../xstd/xstd_error.h"
 
-typedef Error (*KappEntrypoint)(void);
+typedef struct
+{
+    i8* outOrNull;
+    Error errcode;
+} KappReturn;
+
+typedef KappReturn (*KappEntrypoint)(void);

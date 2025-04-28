@@ -690,7 +690,7 @@ i64 string_find_char(ConstStr haystack, i8 needle)
     while (haystack[i])
     {
         if (haystack[i] == needle)
-            return i;
+            return (i64)i;
 
         ++i;
     }
@@ -720,7 +720,7 @@ i64 string_find(ConstStr haystack, ConstStr needle)
         }
 
         if (!needle[j])
-            return i;
+            return (i64)i;
 
         ++i;
     }
@@ -956,7 +956,7 @@ ResultOwnedStr string_replace(Allocator *alloc, ConstStr s, ConstStr what, Const
     {
         while ((next = string_find(s + offset, what)) != -1)
         {
-            HeapStr chunk = string_substr_unsafe(alloc, s + offset, 0, next);
+            HeapStr chunk = string_substr_unsafe(alloc, s + offset, 0, (u64)next);
             if (!chunk)
                 return (ResultOwnedStr){
                     .value = NULL,
@@ -968,7 +968,7 @@ ResultOwnedStr string_replace(Allocator *alloc, ConstStr s, ConstStr what, Const
             HeapStr replaced = string_dupe_noresult(alloc, with);
             strbuilder_push_owned(&strBld, replaced);
 
-            offset += next + whatSize;
+            offset += (u64)next + whatSize;
         }
     }
 
@@ -1201,7 +1201,7 @@ ResultOwnedStr string_from_int(Allocator *alloc, const i64 i)
 
     while (n != 0)
     {
-        i16 d = n % 10;
+        i16 d = (i16)(n % 10);
         buf[idx] = digit_to_char(d);
         --idx;
         n /= 10;
@@ -1215,7 +1215,7 @@ ResultOwnedStr string_from_int(Allocator *alloc, const i64 i)
 
     buf[19] = '\0';
 
-    HeapStr intStr = alloc->alloc(alloc, (19 - idx) + 1);
+    HeapStr intStr = alloc->alloc(alloc, (19 - (u64)idx) + 1);
     string_copy_unsafe(buf + idx + 1, intStr);
 
     return (ResultOwnedStr){
@@ -1243,7 +1243,7 @@ ResultOwnedStr string_from_uint(Allocator *alloc, const u64 i)
 
     while (n != 0)
     {
-        i16 d = n % 10;
+        i16 d = (i16)(n % 10);
         buf[idx] = digit_to_char(d);
         --idx;
         n /= 10;
@@ -1251,7 +1251,7 @@ ResultOwnedStr string_from_uint(Allocator *alloc, const u64 i)
 
     buf[19] = '\0';
 
-    HeapStr intStr = alloc->alloc(alloc, (19 - idx) + 1);
+    HeapStr intStr = alloc->alloc(alloc, (19 - (u64)idx) + 1);
     string_copy_unsafe(buf + idx + 1, intStr);
 
     return (ResultOwnedStr){
@@ -1276,14 +1276,14 @@ ResultOwnedStr string_from_float(Allocator *alloc, const f64 flt, const u64 prec
 
     f64 scale = 1.0;
     for (u64 i = 0; i < precision; ++i)
-        scale *= 10.0;
+        scale *= (f64)10.0;
 
     fracPart *= scale;
     u64 fracInt = (u64)(fracPart + 0.5); // rounding
 
     // Ensure leading zeros in fractional part
-    i64 div = 1;
-    for (int i = 1; i < precision; ++i)
+    u64 div = 1;
+    for (u64 i = 1; i < precision; ++i)
         div *= 10;
 
     u64 zeroes = 0;
@@ -1407,7 +1407,7 @@ ResultU64 string_parse_uint(ConstStr s)
 
     while (char_is_digit(*ptr))
     {
-        u64 newVal = result * 10 + (*ptr - '0');
+        u64 newVal = result * 10 + (u64)(*ptr - '0');
 
         if (newVal < result)
             return (ResultU64){
@@ -1461,7 +1461,7 @@ ResultF64 string_parse_float(ConstStr s)
 
     while (char_is_digit(*ptr))
     {
-        f64 newVal = result * 10.0 + (*ptr - '0');
+        f64 newVal = result * (f64)10.0 + (f64)(*ptr - '0');
 
         if (newVal < result)
             return (ResultF64){
@@ -1496,7 +1496,7 @@ ResultF64 string_parse_float(ConstStr s)
                 };
 
             fraction = newFrac;
-            divisor *= 10.0;
+            divisor *= (f64)10.0;
             ++ptr;
         }
         result += fraction;

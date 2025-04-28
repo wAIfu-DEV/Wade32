@@ -25,7 +25,7 @@ typedef struct _buffalloc_state
 
 u64 __buffalloc_offset_to_aligned(u64 offset)
 {
-    return (offset + _X_BUFFALLOC_DEFAULT_ALIGN - 1) & ~(_X_BUFFALLOC_DEFAULT_ALIGN - 1);
+    return (offset + (u64)_X_BUFFALLOC_DEFAULT_ALIGN - 1) & ~((u64)_X_BUFFALLOC_DEFAULT_ALIGN - 1);
 }
 
 ibool __buffalloc_offset_invalid(u64 totalCapacity, u64 alignedOffset, u64 allocSize)

@@ -19,7 +19,7 @@ void extick_add(ExTick* a, const ExTick b)
     a->tick = res;
 }
 
-void extick_add_ticks(ExTick* a, u32 b)
+void extick_add_ticks(ExTick* a, const u32 b)
 {
     u32 res = a->tick + b;
 

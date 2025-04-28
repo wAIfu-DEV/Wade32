@@ -6,7 +6,8 @@
 #include "kapp_input.h"
 #include "kernel_process_loop.h"
 
-ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, ibool isFullscreen)
+
+ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, const ibool isFullscreen)
 {
     u8 maxWidth = VGA_COLS;
     u8 maxHeight = isFullscreen ? VGA_ROWS : VGA_ROWS - 1;
@@ -66,12 +67,12 @@ void __kapp_sleep_callback(void *arg)
     *flag = true;
 }
 
-void kapp_yield()
+void kapp_yield(void)
 {
     kernel_process();
 }
 
-void kapp_sleep_ticks(u32 ticks)
+void kapp_sleep_ticks(const u32 ticks)
 {
     if (!ticks)
     {
@@ -87,7 +88,7 @@ void kapp_sleep_ticks(u32 ticks)
         kernel_process();
 }
 
-void kapp_sleep_ms(u32 ms)
+void kapp_sleep_ms(const u32 ms)
 {
     kapp_sleep_ticks(ms_to_ticks(ms));
 }

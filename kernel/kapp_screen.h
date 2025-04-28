@@ -10,7 +10,7 @@ typedef struct
     const HeapBuff vgaBuffer;
     const Rectu8 screenRect;
     Vec2u8 cursor;
-    u8 vgaStyle;
+    i8 vgaStyle;
 } KappScreenBuffer;
 
 typedef struct
@@ -21,23 +21,23 @@ typedef struct
 
 
 
-void kapp_screen_set_vga_style(KappScreenBuffer*sb, u8 foreground, u8 background)
+void kapp_screen_set_vga_style(KappScreenBuffer* sb, const i8 foreground, const i8 background)
 {
     sb->vgaStyle = foreground | (background << 4);
 }
 
-u16 __kapp_screen_vga_entry(char c, u8 color)
+u16 __kapp_screen_vga_entry(const i8 c, const i8 color)
 {
     return (u16)c | ((u16)color << 8);
 }
 
-void kapp_screen_scroll_up(KappScreenBuffer* sb)
+void kapp_screen_scroll_up(const KappScreenBuffer* sb)
 {
     u16 *vgaMem = (u16 *)sb->vgaBuffer.bytes;
     const u16 blank = __kapp_screen_vga_entry(' ', sb->vgaStyle);
 
-    const u8 rows = sb->screenRect.height;
-    const u8 cols = sb->screenRect.width;
+    const u32 rows = sb->screenRect.height;
+    const u32 cols = sb->screenRect.width;
     
     for (u32 i = 0; i < (rows - 1) * cols; i++) {
         vgaMem[i] = vgaMem[i + cols];
@@ -48,7 +48,7 @@ void kapp_screen_scroll_up(KappScreenBuffer* sb)
     }
 }
 
-KappScreenBuffer create_kapp_screen_buff(const Buffer buff, Rectu8 subScreenRect)
+KappScreenBuffer create_kapp_screen_buff(const Buffer buff, const Rectu8 subScreenRect)
 {
     return (KappScreenBuffer){
         .vgaBuffer = buff,
@@ -58,7 +58,7 @@ KappScreenBuffer create_kapp_screen_buff(const Buffer buff, Rectu8 subScreenRect
     };
 }
 
-void kapp_screen_set_cursor_position(KappScreenBuffer* sb, u32 x, u32 y) {
+void kapp_screen_set_cursor_position(KappScreenBuffer* sb, const u8 x, const u8 y) {
     sb->cursor.x = x;
     sb->cursor.y = y;
 }
@@ -74,7 +74,7 @@ void __kapp_screen_newline(KappScreenBuffer* sb)
     }
 }
 
-void kapp_screen_write_char_at(KappScreenBuffer* sb, u8 c, u32 x, u32 y)
+void kapp_screen_write_char_at(const KappScreenBuffer* sb, const i8 c, const u8 x, const u8 y)
 {
     if (x >= sb->screenRect.width || y >= sb->screenRect.height) return;
 
@@ -105,7 +105,7 @@ void __kapp_screen_retreat_cursor(KappScreenBuffer* sb)
     --sb->cursor.x;
 }
 
-void kapp_screen_write_char(KappScreenBuffer* sb, i8 c)
+void kapp_screen_write_char(KappScreenBuffer* sb, const i8 c)
 {
     if (c == '\n')
     {

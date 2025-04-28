@@ -7,7 +7,7 @@
 #include "../kernel_globals.h"
 #include "kapps.h"
 
-Error kernel_kappreg_init()
+Error kernel_kappreg_init(void)
 {
     ResultHashMap envMapRes = HashMapInitT(KappEntrypoint, &kGlobal.heap.allocator);
     if (envMapRes.error)
