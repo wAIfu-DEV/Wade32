@@ -60,6 +60,7 @@ void *__debug_realloc(Allocator *this, void *block, u64 newSize)
 {
     DebugAllocatorState *state = (DebugAllocatorState *)this->_internalState;
 
+    void *beforePtr = block;
     void *ptr = state->targetAllocator->realloc((Allocator *)state->targetAllocator, block, newSize);
 
     if (!ptr)
@@ -73,8 +74,8 @@ void *__debug_realloc(Allocator *this, void *block, u64 newSize)
     state->totalAllocBytes += newSize;
     state->activeAllocs += 1;
 
-    // ptrAllocMap[ptr] = size
-    Buffer mapKey = (Buffer){ .bytes = (i8*)&ptr, .size = sizeof(u64) };
+    // ptrAllocMap[block] = size
+    Buffer mapKey = (Buffer){ .bytes = (i8*)&beforePtr, .size = sizeof(u64) };
 
     // This is a yucky stinky hack, compiler too dumb to know that u64 == u32
     // on 32 bit systems so we give it more useless bytes
@@ -88,7 +89,13 @@ void *__debug_realloc(Allocator *this, void *block, u64 newSize)
     }
     state->activeBytes += newSize;
 
-    Error _ = hashmap_set(&state->ptrAllocMap, mapKey, &newSize);
+    Error _ = hashmap_remove(&state->ptrAllocMap, mapKey);
+    (void)_;
+
+    // key using the reallocated ptr
+    mapKey = (Buffer){ .bytes = (i8*)&ptr, .size = sizeof(u64) };
+
+    _ = hashmap_set(&state->ptrAllocMap, mapKey, &newSize);
     (void)_;
 
     //if (state->verbosePrint)

@@ -131,7 +131,7 @@ ResultGrowBuffWriter growbuffwriter_init(Allocator alloc, u32 initSize)
 
 Error growbuffwriter_resize(GrowBuffWriter* gbw, u64 newSize)
 {
-    if (!gbw)
+    if (!gbw || newSize == 0)
         return ERR_INVALID_PARAMETER;
 
     i8* newBlock = gbw->allocator.realloc(&gbw->allocator, gbw->buff.bytes, newSize);

@@ -54,7 +54,7 @@ static struct _kernel_globals
 
     struct
     {
-        HashMap map;
+        HashMap registry;
     } kernel_apps;
     
 } kGlobal = {
@@ -83,7 +83,7 @@ static struct _kernel_globals
         .debugInfo = {0},
     },
     .kernel_apps = {
-        .map = {0},
+        .registry = {0},
     },
 };
 

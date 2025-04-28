@@ -31,6 +31,23 @@ u16 __kapp_screen_vga_entry(char c, u8 color)
     return (u16)c | ((u16)color << 8);
 }
 
+void kapp_screen_scroll_up(KappScreenBuffer* sb)
+{
+    u16 *vgaMem = (u16 *)sb->vgaBuffer.bytes;
+    const u16 blank = __kapp_screen_vga_entry(' ', sb->vgaStyle);
+
+    const u8 rows = sb->screenRect.height;
+    const u8 cols = sb->screenRect.width;
+    
+    for (u32 i = 0; i < (rows - 1) * cols; i++) {
+        vgaMem[i] = vgaMem[i + cols];
+    }
+    
+    for (u32 i = (rows - 1) * cols; i < rows * cols; i++) {
+        vgaMem[i] = blank;
+    }
+}
+
 KappScreenBuffer create_kapp_screen_buff(const Buffer buff, Rectu8 subScreenRect)
 {
     return (KappScreenBuffer){
@@ -52,7 +69,8 @@ void __kapp_screen_newline(KappScreenBuffer* sb)
     ++sb->cursor.y;
     
     if (sb->cursor.y >= sb->screenRect.height) {
-        sb->cursor.y = 0;
+        kapp_screen_scroll_up(sb);
+        --sb->cursor.y;
     }
 }
 
@@ -65,6 +83,27 @@ void kapp_screen_write_char_at(KappScreenBuffer* sb, u8 c, u32 x, u32 y)
     videoMem[1] = sb->vgaStyle;
 }
 
+void __kapp_screen_advance_cursor(KappScreenBuffer* sb)
+{
+    ++sb->cursor.x;
+
+    if (sb->cursor.x >= sb->screenRect.width && sb->cursor.y < sb->screenRect.height)
+    {
+        sb->cursor.x = 0;
+        ++sb->cursor.y;
+    }
+}
+
+void __kapp_screen_retreat_cursor(KappScreenBuffer* sb)
+{
+    if (sb->cursor.x == 0 && sb->cursor.y > 0)
+    {
+        --sb->cursor.y;
+        sb->cursor.x = sb->screenRect.width;
+    }
+
+    --sb->cursor.x;
+}
 
 void kapp_screen_write_char(KappScreenBuffer* sb, i8 c)
 {
@@ -80,8 +119,8 @@ void kapp_screen_write_char(KappScreenBuffer* sb, i8 c)
     }
 
     kapp_screen_write_char_at(sb, c, sb->cursor.x, sb->cursor.y);
+    
     ++sb->cursor.x;
-
     if (sb->cursor.x >= sb->screenRect.width)
     {
         __kapp_screen_newline(sb);

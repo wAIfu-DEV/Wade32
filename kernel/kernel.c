@@ -17,14 +17,17 @@
 #include "kernel_globals.h"
 #include "kernel_process_loop.h"
 
-#include "kernel_apps/shell/shell_main.h"
+#include "kernel_apps/kapps_reg.h"
+#include "kernel_apps/kapps_init.h"
+#include "kapp_exec.h"
 
 void __kernel_print_time(void* arg0);
 
 __attribute__((externally_visible, used, noinline, visibility("default")))
 void kernel_main(void)
 {
-    // Should zero out the BSS
+    // We should zero out the BSS
+    Error err;
 
     kGlobal.screen.vga = vga_create_interface();
     VgaInterface* vga = &kGlobal.screen.vga;
@@ -74,28 +77,22 @@ void kernel_main(void)
 
     vga_print(vga, "> Scheduled timings printing routine.\n");
 
-    ResultHashMap envMapRes = HashMapInitT(KappEntrypoint, &kGlobal.heap.allocator);
-    if (envMapRes.error)
-        kernel_panic(KERR_ENV_INIT_ERROR, "Failed to initialize kernel apps registry.");
-
-    kGlobal.kernel_apps.map = envMapRes.value;
-
-    for (u32 i = 0; i < KAPPS_REG_SIZE; ++i)
-    {
-        const KappRegEntry entry = kappRegistry[i];
-        Error err = hashmap_set_str(&kGlobal.kernel_apps.map, entry.appName, &entry.entryPoint);
-        if (err)
-            kernel_panic(KERR_ENV_FILL_ERROR, "Failed to fill kernel apps registry.");
-    }
-
-    KappEntrypoint shell;
-    Error err = hashmap_get_str(&kGlobal.kernel_apps.map, "shell", &shell);
+    err = kernel_kappreg_init();
     if (err)
-        kernel_panic(KERR_ENV_FILL_ERROR, "Failed to retrieve entry point of shell kernel app.");
+        kernel_panic(KERR_ENV_INIT_ERROR, "Failed to initialize kernel apps registry.");
+    
+    vga_print(vga, "> Initialized kernel apps registry.\n");
 
-    Error shellErr = shell();
-    if (shellErr)
-        kernel_panic((u32)shellErr, ErrorToString(shellErr));
+    vga_clear_screen(vga);
+    vga_print(vga, "Wade32\n\n");
+
+    vga_set_style(vga, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLUE);
+    vga_gfx_draw_border_rect(vga, (Vec2u8){0, 1}, (Vec2u8){VGA_COLS - 1, VGA_ROWS - 1});
+    vga_set_style(vga, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+
+    err = kapp_exec("shell");
+    if (err)
+        kernel_panic((u32)err, ErrorToString(err));
 
     while (true)
         kernel_process();
