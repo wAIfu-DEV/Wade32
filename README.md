@@ -2,6 +2,8 @@
 
 Wade32 is a minimal 32-bit x86 operating system developed from scratch. It offers a foundational platform for exploring low-level systems programming, kernel design, and operating system mechanics.
 
+![Kernel Shell](https://github.com/wAIfu-DEV/Wade32/blob/main/readme_assets/wade_shell.gif)
+
 ---
 
 ## 📐 Architecture Overview
