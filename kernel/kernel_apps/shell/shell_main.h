@@ -18,8 +18,8 @@ Error kapp_shell(void)
     // Get subscreen buffer from kernel
     ResultKASB sbRes = kapp_request_screen_buffer((Rectu8){
         .x = 1,
-        .y = 1,
-        .height = 22,
+        .y = 0,
+        .height = 23,
         .width = 78,
     }, false);
 
@@ -89,6 +89,8 @@ Error kapp_shell(void)
             --gbWriter.writeHead;
 
             // Handle command string
+            if (string_equals(commandStr, "quit"))
+                goto cleanup;
 
             // Clear allocated memory
             kGlobal.heap.allocator.free(&kGlobal.heap.allocator, commandStr);
@@ -132,6 +134,9 @@ Error kapp_shell(void)
         kapp_yield();
     }
 
+cleanup:
+    kapp_screen_set_vga_style(&sb, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    kapp_screen_clear(&sb);
     kapp_flush_screen_buffer(&sb);
     kapp_screen_buffer_deinit(&sb);
     return ERR_OK;

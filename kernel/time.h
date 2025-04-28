@@ -3,6 +3,8 @@
 #include "../xstd/xstd_core.h"
 #include "../xstd/xstd_alloc.h"
 #include "../xstd/xstd_string.h"
+#include "../xstd/xstd_writer.h"
+
 #include "bios_io.h"
 #include "cpu/timer.h"
 #include "time_type.h"
@@ -59,104 +61,91 @@ Time time_utc()
 
 HeapStr time_to_utc_string(Allocator* alloc, Time t)
 {
-    ResultStrBuilder builderRes = strbuilder_init(alloc);
-    if (builderRes.error)
-        return NULL;
+    HeapStr str = alloc->alloc(alloc, 20);
 
-    StringBuilder builder = builderRes.value;
+    if (!str)
+        return NULL;
+    
+    Error err;
+    
+    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 20 };
+    ResultBuffWriter writerRes = buffwriter_init(buff);
+    err = writerRes.error;
+    if (err) goto cleanup;
+    
+    BuffWriter buffWriter = writerRes.value;
+    Writer *writer = (Writer*)&buffWriter;
 
     u32 realYear = (u32)t.year + ((u32)t.century * 100);
-    ResultOwnedStr r = string_from_uint(alloc, realYear);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder); // Deallocates copied and owned strings
-        return NULL;
-    };
+    err = writer_write_uint(writer, realYear);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
-    strbuilder_push_copy(&builder, "-");
+    err = writer_write_byte(writer, '-');
+    if (err) goto cleanup;
 
     if (t.month < 10)
     {
-        strbuilder_push_copy(&builder, "0");
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
     }
 
-    r = string_from_uint(alloc, t.month);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    err = writer_write_uint(writer, t.month);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
-    strbuilder_push_copy(&builder, "-");
+    err = writer_write_byte(writer, '-');
+    if (err) goto cleanup;
 
     if (t.day < 10)
     {
-        strbuilder_push_copy(&builder, "0");
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
     }
 
-    r = string_from_uint(alloc, t.day);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    err = writer_write_uint(writer, t.day);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
-    strbuilder_push_copy(&builder, " ");
+    err = writer_write_byte(writer, ' ');
+    if (err) goto cleanup;
 
     if (t.hours < 10)
     {
-        strbuilder_push_copy(&builder, "0");
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
     }
 
-    r = string_from_uint(alloc, t.hours);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    err = writer_write_uint(writer, t.hours);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
-    strbuilder_push_copy(&builder, ":");
+    err = writer_write_byte(writer, ':');
+    if (err) goto cleanup;
 
     if (t.minutes < 10)
     {
-        strbuilder_push_copy(&builder, "0");
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
     }
 
-    r = string_from_uint(alloc, t.minutes);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    err = writer_write_uint(writer, t.minutes);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
-    strbuilder_push_copy(&builder, ":");
+    err = writer_write_byte(writer, ':');
+    if (err) goto cleanup;
 
     if (t.seconds < 10)
     {
-        strbuilder_push_copy(&builder, "0");
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
     }
 
-    r = string_from_uint(alloc, t.seconds);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    err = writer_write_uint(writer, t.seconds);
+    if (err) goto cleanup;
 
-    strbuilder_push_owned(&builder, r.value);
+    err = writer_write_byte(writer, 0);
+    if (err) goto cleanup;
 
-    r = strbuilder_get_string(&builder);
-    if (r.error)
-    {
-        strbuilder_deinit(&builder);
-        return NULL;
-    };
+    return str;
 
-    strbuilder_deinit(&builder);
-    return r.value;
+cleanup:
+    alloc->free(alloc, str);
+    return NULL;
 }

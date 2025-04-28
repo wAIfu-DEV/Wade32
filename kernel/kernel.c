@@ -86,10 +86,6 @@ void kernel_main(void)
     vga_clear_screen(vga);
     vga_print(vga, "Wade32\n\n");
 
-    vga_set_style(vga, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLUE);
-    vga_gfx_draw_border_rect(vga, (Vec2u8){0, 1}, (Vec2u8){VGA_COLS - 1, VGA_ROWS - 1});
-    vga_set_style(vga, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-
     err = kapp_exec("shell");
     if (err)
         kernel_panic((u32)err, ErrorToString(err));
