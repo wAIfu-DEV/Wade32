@@ -2,14 +2,20 @@
 
 #include "vga_interface.h"
 #include "cpu/halt.h"
+#include "cpu/interrupts.h"
 
 void kernel_hang(void)
 {
-    while (true) halt();
+    interrupts_disable();
+
+    while (true)
+        halt();
 }
 
 void kernel_panic(const u32 errorCode, ConstStr message)
 {
+    interrupts_disable();
+
     VgaInterface v = vga_create_interface();
     vga_set_style(&v, VGA_COLOR_WHITE, VGA_COLOR_BLUE);
     vga_clear_screen(&v);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cpu/halt.h"
+#include "cpu/interrupts.h"
 
 #include "vga_interface.h"
 #include "kernel_globals.h"
@@ -11,6 +12,8 @@
  */
 void kernel_process(void)
 {
+    interrupts_disable(); // Critical section
+
     // Handle keyboard input
     if (kGlobal.keyboard.inputBufferHead > 0)
     {
@@ -28,5 +31,8 @@ void kernel_process(void)
 
     // Handle scheduled events
     scheduler_process();
+
+    interrupts_enable(); // Make sure interrupts are enabled
+                         // if not will lead to hang
     halt();
 }
