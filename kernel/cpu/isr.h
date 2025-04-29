@@ -4,7 +4,7 @@
 
 #include "../../xstd/xstd_core.h"
 #include "../kernel_panic.h"
-#include "../bios_io.h"
+#include "../drivers/bios_io.h"
 
 /* Struct which aggregates many registers */
 typedef struct {

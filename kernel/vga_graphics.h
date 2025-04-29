@@ -2,7 +2,7 @@
 
 #include "../xstd/xstd_vectors.h"
 
-#include "vga.h"
+#include "vga_interface.h"
 
 #define VGA_GFX_BORDER_VERT (i8)186
 #define VGA_GFX_BORDER_HORI (i8)205

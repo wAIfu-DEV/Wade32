@@ -2,7 +2,7 @@
 
 #include "../../xstd/xstd_error.h"
 #include "../../xstd/xstd_hashmap.h"
-#include "../kapp_entry_type.h"
+#include "../types/kapp_entry_type.h"
 
 #define KAPPS_REG_SIZE 2
 

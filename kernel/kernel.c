@@ -2,7 +2,7 @@
 #include "../xstd/xstd_alloc_buffer.h"
 #include "../xstd/xstd_alloc_debug.h"
 
-#include "vga.h"
+#include "vga_interface.h"
 #include "vga_graphics.h"
 
 #include "kernel_errors.h"
@@ -11,18 +11,23 @@
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/timer.h"
+#include  "cpu/interrupts.h"
 
-#include "keyboard.h"
+#include "drivers/keyboard.h"
 #include "scheduler.h"
 #include "kernel_globals.h"
 #include "kernel_process_loop.h"
 
 #include "kernel_apps/kapps_reg.h"
 #include "kernel_apps/kapps_init.h"
-#include "kapp_exec.h"
+#include "kernel_apps/shared/kapp_exec.h"
 
 void __kernel_print_time(void* arg0);
 
+/**
+ * @brief Entry point of the kernel.
+ * 
+ */
 __attribute__((externally_visible, used, noinline, visibility("default")))
 void kernel_main(void)
 {
@@ -60,7 +65,7 @@ void kernel_main(void)
     vga_print(vga, "> Created kernel heap allocator.\n");
 
     isr_install();
-    __asm__ volatile("sti");
+    interrupts_enable();
 
     vga_print(vga, "> Initialized interrupts.\n");
 
@@ -68,7 +73,7 @@ void kernel_main(void)
 
     vga_print(vga, "> Started tick timer.\n");
 
-    register_interrupt_handler(IRQ1, keyboard_handler);
+    register_interrupt_handler(IRQ1, keyboard_driver_in_handler);
 
     vga_print(vga, "> Registered keyboard handler, switching to user input mode.\n");
     

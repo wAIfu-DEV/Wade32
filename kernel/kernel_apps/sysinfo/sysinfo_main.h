@@ -3,7 +3,7 @@
 #include "../../../xstd/xstd_error.h"
 #include "../../../xstd/xstd_writer.h"
 
-#include "../../kapp_stdout.h"
+#include "../shared/kapp_stdout.h"
 
 #define WADE_ASCII_0 " __   _   __   _____   ______   _____\n"
 #define WADE_ASCII_1 "|  | / | /  | /     | |   _  | |  __/\n"

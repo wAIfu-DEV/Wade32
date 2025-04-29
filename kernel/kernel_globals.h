@@ -3,10 +3,10 @@
 #include "../xstd/xstd_core.h"
 #include "../xstd/xstd_alloc.h"
 
-#include "extended_tick.h"
-#include "time_type.h"
-#include "schedule_event_type.h"
-#include "kapp_inputbuff_type.h"
+#include "types/extended_tick.h"
+#include "types/time_type.h"
+#include "types/schedule_event_type.h"
+#include "types/kapp_inputbuff_type.h"
 #include "kernel_apps/kapps_reg.h"
 
 #define KERNEL_HEAP_SIZE (4096 * 2)

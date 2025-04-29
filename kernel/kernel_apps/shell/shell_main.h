@@ -1,8 +1,7 @@
 #pragma once
 
 #include "../../../xstd/xstd_writer.h"
-#include "../../kapp.h"
-#include "../../kapp_exec.h"
+#include "../shared/kapp.h"
 
 void __shell_fill_input_buffer(HeapBuff buff, i8 fill)
 {

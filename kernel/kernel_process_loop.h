@@ -1,9 +1,14 @@
 #pragma once
 
-#include "vga.h"
+#include "cpu/halt.h"
+
+#include "vga_interface.h"
 #include "kernel_globals.h"
 #include "scheduler.h"
 
+/**
+ * @brief "Main loop" of the kernel, handling user input and scheduler processing.
+ */
 void kernel_process(void)
 {
     // Handle keyboard input
@@ -23,6 +28,5 @@ void kernel_process(void)
 
     // Handle scheduled events
     scheduler_process();
-
-    __asm__ volatile("hlt");
+    halt();
 }

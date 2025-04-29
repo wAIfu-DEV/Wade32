@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../xstd/xstd_hashmap.h"
+#include "../../../xstd/xstd_hashmap.h"
 
-#include "kernel_globals.h"
-#include "kernel_apps/kapps_reg.h"
+#include "../../kernel_globals.h"
+#include "../../kernel_apps/kapps_reg.h"
 
 typedef struct
 {

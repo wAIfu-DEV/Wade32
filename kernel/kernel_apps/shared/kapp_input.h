@@ -1,9 +1,9 @@
 #pragma once
 
-#include "kapp_inputbuff_type.h"
-#include "kernel_globals.h"
-#include "kernel_errors.h"
-#include "kernel_panic.h"
+#include "../../types/kapp_inputbuff_type.h"
+#include "../../kernel_globals.h"
+#include "../../kernel_errors.h"
+#include "../../kernel_panic.h"
 
 void __kapp_keypress_callback(KappInputBuff* ib, const i8 c)
 {

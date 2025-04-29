@@ -1,9 +1,12 @@
 #pragma once
 
-#include "../xstd/xstd_core.h"
-#include "../xstd/xstd_error.h"
-#include "../xstd/xstd_vectors.h"
-#include "../xstd/xstd_rects.h"
+#include "../../../xstd/xstd_core.h"
+#include "../../../xstd/xstd_error.h"
+#include "../../../xstd/xstd_vectors.h"
+#include "../../../xstd/xstd_rects.h"
+
+#include "../../kernel_globals.h"
+#include "../../vga_interface.h"
 
 typedef struct
 {
@@ -48,7 +51,7 @@ void kapp_screen_scroll_up(const KappScreenBuffer* sb)
     }
 }
 
-KappScreenBuffer create_kapp_screen_buff(const Buffer buff, const Rectu8 subScreenRect)
+KappScreenBuffer kapp_create_screen_buff(const Buffer buff, const Rectu8 subScreenRect)
 {
     return (KappScreenBuffer){
         .vgaBuffer = buff,
@@ -56,6 +59,60 @@ KappScreenBuffer create_kapp_screen_buff(const Buffer buff, const Rectu8 subScre
         .cursor = (Vec2u8){0,0},
         .vgaStyle = 0x07,
     };
+}
+
+ResultKASB kapp_request_screen_buffer(Rectu8 dimensions, const ibool isFullscreen)
+{
+    u8 maxWidth = VGA_COLS;
+    u8 maxHeight = isFullscreen ? VGA_ROWS : VGA_ROWS - 1;
+
+    if (dimensions.x + dimensions.width > maxWidth
+        || dimensions.y + dimensions.height > maxHeight)
+        return (ResultKASB){
+            .error = ERR_INVALID_PARAMETER,  
+        };
+    
+    if (!isFullscreen)
+    {
+        // Shift down for kernel header
+        ++dimensions.y;
+    }
+
+    u32 allocSize = (u32)dimensions.width * (u32)dimensions.height * 2;
+    i8* bytes = kGlobal.heap.allocator.alloc(&kGlobal.heap.allocator, allocSize);
+
+    if (!bytes)
+        return (ResultKASB){
+            .error = ERR_OUT_OF_MEMORY,
+        };
+    
+    HeapBuff buff = (HeapBuff){
+        .bytes = bytes,
+        .size = allocSize,
+    };
+    
+    return (ResultKASB){
+        .value = kapp_create_screen_buff(buff, dimensions),
+        .error = ERR_OK,
+    };
+}
+
+void kapp_screen_buffer_deinit(KappScreenBuffer* sb)
+{
+    kGlobal.heap.allocator.free(&kGlobal.heap.allocator, sb->vgaBuffer.bytes);
+}
+
+void kapp_flush_screen_buffer(KappScreenBuffer* sb)
+{
+    for (u8 y = 0; y < sb->screenRect.height; ++y)
+    {
+        for (u8 x = 0; x < sb->screenRect.width; ++x)
+        {
+            u16* buffMem = ((u16*)sb->vgaBuffer.bytes) + ((y * sb->screenRect.width) + (x));
+            vga_print_entry_at(*buffMem, x + sb->screenRect.x, y + sb->screenRect.y);
+        }
+    }
+    vga_set_cursor_position(&kGlobal.screen.vga, sb->cursor.x + sb->screenRect.x, sb->cursor.y + sb->screenRect.y);
 }
 
 void kapp_screen_set_cursor_position(KappScreenBuffer* sb, const u8 x, const u8 y) {

@@ -5,9 +5,10 @@
 #include "../xstd/xstd_string.h"
 #include "../xstd/xstd_writer.h"
 
-#include "bios_io.h"
+#include "drivers/bios_io.h"
 #include "cpu/timer.h"
-#include "time_type.h"
+#include "drivers/rtc_time.h"
+#include "types/time_type.h"
 #include "kernel_globals.h"
 
 u32 ticks_to_ms(const u32 ticks)
@@ -20,20 +21,6 @@ u32 ms_to_ticks(const u32 ms)
     return (ms * kGlobal.timing.tickFreq) / 1000;
 }
 
-u8 read_rtc_register(const u8 reg) {
-    bios_outb(0x70, reg);
-    return bios_inb(0x71);
-}
-
-ibool is_rtc_time_updating(void) {
-    bios_outb(0x70, 0x0A);
-    return (ibool)(bios_inb(0x71) & 0x80);
-}
-
-u8 bcd_to_binary(const u8 bcd) {
-    return (u8)(((bcd >> 4) * 10) + (bcd & 0x0F));
-}
-
 Time time_utc(void)
 {
     // If last time is within reasonable range, skip waiting and return last time.
@@ -43,18 +30,10 @@ Time time_utc(void)
     if (kGlobal.timing.tick.tick - kGlobal.timing.utcCacheTick < 10) {
         return kGlobal.timing.cachedUtcTime;
     } else {
-        while (is_rtc_time_updating()); // Wait until not updating
+        while (rtc_is_updating()); // Wait until not updating
     }
 
-    kGlobal.timing.cachedUtcTime = (Time){
-        .seconds = bcd_to_binary(read_rtc_register(0x00)),
-        .minutes = bcd_to_binary(read_rtc_register(0x02)),
-        .hours =   bcd_to_binary(read_rtc_register(0x04)),
-        .day =     bcd_to_binary(read_rtc_register(0x07)),
-        .month =   bcd_to_binary(read_rtc_register(0x08)),
-        .year =    bcd_to_binary(read_rtc_register(0x09)),
-        .century = bcd_to_binary(read_rtc_register(0x32)),
-    };
+    kGlobal.timing.cachedUtcTime = rtc_get_time();
     kGlobal.timing.utcCacheTick = kGlobal.timing.tick.tick;
     return kGlobal.timing.cachedUtcTime;
 }

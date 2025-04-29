@@ -1,13 +1,11 @@
 #pragma once
 
-#include "vga.h"
+#include "vga_interface.h"
+#include "cpu/halt.h"
 
 void kernel_hang(void)
 {
-    while (true)
-    {
-        __asm__("hlt");
-    }
+    while (true) halt();
 }
 
 void kernel_panic(const u32 errorCode, ConstStr message)
@@ -21,5 +19,7 @@ void kernel_panic(const u32 errorCode, ConstStr message)
     vga_print(&v, "\n");
     vga_print(&v, message);
     vga_print_char(&v, '\n');
+
+    // We should have a countdown with shutdown here
     kernel_hang();
 }

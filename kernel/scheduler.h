@@ -9,7 +9,7 @@
 #include "cpu/timer.h"
 #include "time.h"
 
-#include "schedule_event_type.h"
+#include "types/schedule_event_type.h"
 
 void __scheduler_enqueue_timedout(const ScheduleEvent ev)
 {

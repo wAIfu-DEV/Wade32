@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../xstd/xstd_core.h"
-#include "extended_tick.h"
+#include "../../xstd/xstd_core.h"
+#include "../types/extended_tick.h"
 
 #define SCHEDULER_BUFF_SIZE 128
 

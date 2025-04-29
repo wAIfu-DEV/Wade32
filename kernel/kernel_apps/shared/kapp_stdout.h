@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../xstd/xstd_core.h"
-#include "../xstd/xstd_writer.h"
-#include "kernel_globals.h"
+#include "../../../xstd/xstd_core.h"
+#include "../../../xstd/xstd_writer.h"
+#include "../../kernel_globals.h"
 
 typedef struct
 {

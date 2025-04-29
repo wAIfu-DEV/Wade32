@@ -1,35 +1,13 @@
 #pragma once
 
 #include "../xstd/xstd_core.h"
-#include "bios_io.h"
-
-#define VGA_MEM (volatile i8*)0xb8000
-
-#define VGA_ROWS 25
-#define VGA_COLS 80
-#define VGA_MAX_OFFSET 2000
-
-#define VGA_COLOR_BLACK         0x0
-#define VGA_COLOR_BLUE          0x1
-#define VGA_COLOR_GREEN         0x2
-#define VGA_COLOR_CYAN          0x3
-#define VGA_COLOR_RED           0x4
-#define VGA_COLOR_MAGENTA       0x5
-#define VGA_COLOR_BROWN         0x6
-#define VGA_COLOR_LIGHT_GREY    0x7
-#define VGA_COLOR_DARK_GREY     0x8
-#define VGA_COLOR_LIGHT_BLUE    0x9
-#define VGA_COLOR_LIGHT_GREEN   0xA
-#define VGA_COLOR_LIGHT_CYAN    0xB
-#define VGA_COLOR_LIGHT_RED     0xC
-#define VGA_COLOR_LIGHT_MAGENTA 0xD
-#define VGA_COLOR_LIGHT_BROWN   0xE
-#define VGA_COLOR_WHITE         0xF
+#include "drivers/bios_io.h"
+#include "drivers/vga.h"
 
 typedef struct _vga_interface
 {
-    u32 xOffset;
-    u32 yOffset;
+    u8 xOffset;
+    u8 yOffset;
     i8 currentStyle;
     ibool updateCursor;
 } VgaInterface;
@@ -46,39 +24,30 @@ VgaInterface vga_create_interface(void)
 
 void vga_set_style(VgaInterface*v, const i8 foreground, const i8 background)
 {
-    v->currentStyle = foreground | (background << 4);
+    v->currentStyle = vga_driver_make_style(foreground, background);
 }
 
-u16 __vga_entry(const i8 c, const i8 color)
-{
-    return (u16)c | ((u16)color << 8);
-}
-
+// TODO
 void vga_scroll_up(const VgaInterface* v) {
-    volatile u16 *vgaMem = (u16 *)VGA_MEM;
-    const u16 blank = __vga_entry(' ', v->currentStyle);
+    const u16 blank = vga_driver_make_entry(' ', v->currentStyle);
     
-    for (u32 i = 0; i < (VGA_ROWS - 1) * VGA_COLS; i++) {
-        vgaMem[i] = vgaMem[i + VGA_COLS];
+    for (u32 i = 0; i < (VGA_ROWS - 1) * VGA_COLS; i++)
+    {
+        u16 under = vga_driver_read_entry_offset(i + VGA_COLS);
+        vga_driver_put_entry_offset(under, i);
     }
     
     for (u32 i = (VGA_ROWS - 1) * VGA_COLS; i < VGA_ROWS * VGA_COLS; i++) {
-        vgaMem[i] = blank;
+        vga_driver_put_entry_offset(blank, i);
     }
 }
 
 void __vga_update_cursor(const VgaInterface* v) {
     if (!v->updateCursor) return;
-
-    const u16 position = (u16)(v->yOffset * VGA_COLS + v->xOffset);
-    
-    bios_outb(0x3D4, 0x0F);
-    bios_outb(0x3D5, (u8)(position & 0xFF));
-    bios_outb(0x3D4, 0x0E);
-    bios_outb(0x3D5, (u8)((position >> 8) & 0xFF));
+    vga_driver_set_cursor(v->xOffset, v->yOffset);
 }
 
-void vga_set_cursor_position(VgaInterface* v, const u32 x, const u32 y) {
+void vga_set_cursor_position(VgaInterface* v, const u8 x, const u8 y) {
     v->xOffset = x;
     v->yOffset = y;
     __vga_update_cursor(v);
@@ -96,21 +65,14 @@ void __vga_newline(VgaInterface* v)
     __vga_update_cursor(v);
 }
 
-void vga_print_char_at(const i8 c, const i8 style, const u32 x, const u32 y)
+void vga_print_char_at(const i8 c, const i8 style, const u8 x, const u8 y)
 {
-    if (x >= VGA_COLS || y >= VGA_ROWS) return;
-
-    volatile i8* videoMem = VGA_MEM + (((y * 80) + (x)) * 2);
-    videoMem[0] = c;
-    videoMem[1] = style;
+    vga_driver_put_char(c, style, x, y);
 }
 
-void vga_print_entry_at(const u16 entry, const u32 x, const u32 y)
+void vga_print_entry_at(const u16 entry, const u8 x, const u8 y)
 {
-    if (x >= VGA_COLS || y >= VGA_ROWS) return;
-
-    volatile u16* videoMem = ((volatile u16*)VGA_MEM) + ((y * 80) + (x));
-    *videoMem = entry;
+    vga_driver_put_entry(entry, x, y);
 }
 
 void vga_print_char(VgaInterface* v, const i8 c)
@@ -127,7 +89,7 @@ void vga_print_char(VgaInterface* v, const i8 c)
         return;
     }
 
-    vga_print_char_at(c, v->currentStyle, v->xOffset, v->yOffset);
+    vga_driver_put_char(c, v->currentStyle, v->xOffset, v->yOffset);
     ++v->xOffset;
 
     if (v->xOffset >= VGA_COLS)
@@ -276,11 +238,9 @@ void vga_print(VgaInterface* v, ConstStr text)
 }
 
 void vga_clear_screen(VgaInterface* v) {
-    volatile u16 *vgaMem = (u16 *)VGA_MEM;
-    const u16 blank = __vga_entry(' ', v->currentStyle);
-    
+    const u16 blank = vga_driver_make_entry(' ', v->currentStyle);
     for (u32 i = 0; i < 80 * 25; ++i) {
-        vgaMem[i] = blank;
+        vga_driver_put_entry_offset(blank, i);
     }
     vga_set_cursor_position(v, 0, 0);
 }

@@ -3,8 +3,8 @@
 // From: https://github.com/cfenollosa/os-tutorial
 
 #include "isr.h"
-#include "../bios_io.h"
-#include "../extended_tick.h"
+#include "../drivers/bios_io.h"
+#include "../types/extended_tick.h"
 #include "../kernel_globals.h"
 
 static void timer_callback(registers_t regs)

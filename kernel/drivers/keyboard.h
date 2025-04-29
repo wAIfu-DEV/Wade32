@@ -1,14 +1,12 @@
 #pragma once
 
-// Partially AI Generated
-
-#include "../xstd/xstd_core.h"
+#include "../../xstd/xstd_core.h"
 #include "bios_io.h"
-#include "cpu/isr.h"
-#include "kernel_globals.h"
+#include "../cpu/isr.h"
+#include "../kernel_globals.h"
 
 #define SCANCODE_TO_ASCII_SIZE 128
-const i8 scancode_to_ascii[SCANCODE_TO_ASCII_SIZE] = {
+const i8 scancodeToASCII[SCANCODE_TO_ASCII_SIZE] = {
   0,  27, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', '\b',   
   '\t', /* <-- Tab */
   'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\n',     
@@ -42,7 +40,7 @@ const i8 scancode_to_ascii[SCANCODE_TO_ASCII_SIZE] = {
     0,  /* All other keys are undefined */
 };
 
-void keyboard_handler(registers_t regs)
+void keyboard_driver_in_handler(registers_t regs)
 {
     (void)regs;
 
@@ -53,7 +51,7 @@ void keyboard_handler(registers_t regs)
     } else {
         if (scancode >= SCANCODE_TO_ASCII_SIZE) return;
 
-        char c = scancode_to_ascii[scancode];
+        char c = scancodeToASCII[scancode];
         if (c)
         {
             if (kGlobal.keyboard.inputBufferHead >= KEYBOARD_INPUT_BUFF_SIZE) return;
