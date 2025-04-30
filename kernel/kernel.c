@@ -94,9 +94,14 @@ void kernel_main(void)
     ResultKEP kepRes = kapp_get_entrypoint("shell");
     if (kepRes.error)
         kernel_panic(KERR_NO_SHELL, "Failed to find kernel shell.");
+    
+    Args shellArgs = (Args){
+        .size = 0,
+        .strings = NULL,
+    };
 
     KappEntrypoint shell = kepRes.value;
-    KappReturn ret = shell();
+    KappReturn ret = shell(shellArgs);
     if (ret.errcode)
         kernel_panic((u32)ret.errcode, ErrorToString(ret.errcode));
 
@@ -110,7 +115,7 @@ void __kernel_print_time(void* arg0)
 {
     (void)arg0;
     Time t = time_utc();
-    HeapStr dateStr = time_to_utc_string(&kGlobal.heap.allocator, t);
+    HeapStr dateStr = time_to_datetime_string(&kGlobal.heap.allocator, t);
 
     VgaInterface v = kGlobal.screen.vga; // Copy
     v.updateCursor = false;

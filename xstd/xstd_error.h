@@ -31,6 +31,7 @@ enum ErrorEnum
     ERR_WOULD_OVERFLOW,
     ERR_UNEXPECTED_BYTE,
     ERR_UNEXPECTED_ITEM,
+    ERR_PARSE_ERROR,
     _ERR_MAX_SENTINEL,
 };
 
@@ -53,6 +54,7 @@ const i8 *ErrorStrings[_ERR_MAX_SENTINEL] = {
     [ERR_WOULD_OVERFLOW] = "WOULD OVERFLOW",
     [ERR_UNEXPECTED_BYTE] = "UNEXPECTED BYTE",
     [ERR_UNEXPECTED_ITEM] = "UNEXPECTED ITEM",
+    [ERR_PARSE_ERROR] = "PARSE ERROR",
 };
 
 #define ErrorToString(err) (((err) < _ERR_MAX_SENTINEL) ? ErrorStrings[(err)] : "UNKNOWN")

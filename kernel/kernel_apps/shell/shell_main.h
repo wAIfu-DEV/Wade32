@@ -2,6 +2,7 @@
 
 #include "../../../xstd/xstd_writer.h"
 #include "../shared/kapp.h"
+#include "../../types/args.h"
 
 void __shell_fill_input_buffer(HeapBuff buff, i8 fill)
 {
@@ -13,8 +14,77 @@ void __shell_fill_input_buffer(HeapBuff buff, i8 fill)
     }
 }
 
-KappReturn kapp_shell(void)
+ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
 {
+    ibool ret = false;
+    Allocator* a = &kGlobal.heap.allocator;
+
+    ResultArgs argsRes = args_parse(commandStr, a);
+    if (argsRes.error)
+    {
+        kapp_screen_write_str(sb, "Failed to parse command arguments.");
+        goto cleanup;
+    }
+
+    Args kappArgs = argsRes.value;
+
+    if (kappArgs.size == 0)
+    {
+        goto cleanup;
+    }
+
+    // Handle command string
+    if (string_equals(kappArgs.strings[0], "quit"))
+    {
+        ret = true;
+        goto cleanup;
+    }
+
+    kapp_screen_write_char(sb, '\n');
+
+    ResultKEP kepRes = kapp_get_entrypoint(kappArgs.strings[0]);
+    if (kepRes.error)
+    {
+        kapp_screen_write_str(sb, "Could not find kernel app: ");
+        kapp_screen_write_str(sb, kappArgs.strings[0]);
+    }
+    else
+    {
+        KappEntrypoint kapp = kepRes.value;
+        KappReturn kappRet = kapp(kappArgs);
+
+        if (kappRet.outOrNull)
+        {
+            kapp_screen_write_str(sb, kappRet.outOrNull);
+            a->free(a, kappRet.outOrNull);
+        }
+
+        if (kappRet.errcode)
+        {
+            if (kappRet.outOrNull)
+            {
+                kapp_screen_write_str(sb, "\n");
+            }
+
+            kapp_screen_write_str(sb, "Failed with error: ");
+            kapp_screen_write_str(sb, ErrorToString(kappRet.errcode));
+        }
+    }
+
+cleanup:
+    while (false); // labels are stupid
+
+    for (u32 i = 0; i < kappArgs.size; ++i)
+    {
+        a->free(a, (HeapStr)kappArgs.strings[i]);
+    }
+    a->free(a, kappArgs.strings);
+    return ret;
+}
+
+KappReturn kapp_shell(Args args)
+{
+    (void)args;
     Error err;
 
     // Get subscreen buffer from kernel
@@ -101,39 +171,9 @@ KappReturn kapp_shell(void)
             }
             --gbWriter.writeHead;
 
-            // Handle command string
-            if (string_equals(commandStr, "quit"))
+            ibool shouldQuit = __shell_handle_command(commandStr, &sb);
+            if (shouldQuit)
                 goto cleanup;
-            
-            if (!string_equals(commandStr, ""))
-            {
-                kapp_screen_write_char(&sb, '\n');
-
-                ResultKEP kepRes = kapp_get_entrypoint(commandStr);
-                if (kepRes.error)
-                {
-                    kapp_screen_write_str(&sb, "Could not find kernel app: ");
-                    kapp_screen_write_str(&sb, commandStr);
-                }
-                else
-                {
-                    KappEntrypoint kapp = kepRes.value;
-                    KappReturn ret = kapp();
-
-                    // We need a way for the kernel to free this
-                    if (ret.outOrNull)
-                    {
-                        kapp_screen_write_str(&sb, ret.outOrNull);
-                        kGlobal.heap.allocator.free(&kGlobal.heap.allocator, ret.outOrNull);
-                    }
-
-                    if (ret.errcode)
-                    {
-                        kapp_screen_write_str(&sb, "Failed with error: ");
-                        kapp_screen_write_str(&sb, ErrorToString(ret.errcode));
-                    }
-                }
-            }
 
             // Clear allocated memory
             kGlobal.heap.allocator.free(&kGlobal.heap.allocator, commandStr);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../shared/kapp.h"
+#include "../../types/args.h"
 
 
 void __kapp_help_print_apps(Buffer key, void *value, void *userArg)
@@ -13,8 +14,10 @@ void __kapp_help_print_apps(Buffer key, void *value, void *userArg)
     writer_write_byte(stdout, '\n');
 }
 
-KappReturn kapp_help(void)
+KappReturn kapp_help(Args args)
 {
+    (void)args;
+
     ResultKSTDO stdoRes = kapp_request_stdout();
     if (stdoRes.error)
         return (KappReturn){
@@ -27,6 +30,7 @@ KappReturn kapp_help(void)
 
     writer_write_str(stdout, "Available commands:\n");
     hashmap_for_each(&kGlobal.kernel_apps.registry, __kapp_help_print_apps, (void*)stdout);
+    writer_write_str(stdout, "quit");
 
     return (KappReturn){
         .errcode = ERR_OK,

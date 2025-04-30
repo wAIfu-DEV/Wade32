@@ -4,6 +4,7 @@
 #include "../../../xstd/xstd_writer.h"
 
 #include "../shared/kapp_stdout.h"
+#include "../../types/args.h"
 
 #define WADE_ASCII_0 " __   _   __   _____   ______   _____\n"
 #define WADE_ASCII_1 "|  | / | /  | /     | |   _  | |  __/\n"
@@ -11,8 +12,10 @@
 #define WADE_ASCII_3 "|         /   |  || | |  |/ /  | |___\n"
 #define WADE_ASCII_4 "|___/|___/    |__||_| |____/   |____/\n\n"
 
-KappReturn kapp_sysinfo(void)
+KappReturn kapp_sysinfo(Args args)
 {
+    (void)args;
+
     ResultKSTDO stdoRes = kapp_request_stdout();
     if (stdoRes.error)
         return (KappReturn){

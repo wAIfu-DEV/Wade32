@@ -38,7 +38,7 @@ Time time_utc(void)
     return kGlobal.timing.cachedUtcTime;
 }
 
-HeapStr time_to_utc_string(Allocator* alloc, const Time t)
+HeapStr time_to_datetime_string(Allocator* alloc, const Time t)
 {
     HeapStr str = alloc->alloc(alloc, 20);
 
@@ -85,6 +85,118 @@ HeapStr time_to_utc_string(Allocator* alloc, const Time t)
 
     err = writer_write_byte(writer, ' ');
     if (err) goto cleanup;
+
+    if (t.hours < 10)
+    {
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
+    }
+
+    err = writer_write_uint(writer, t.hours);
+    if (err) goto cleanup;
+
+    err = writer_write_byte(writer, ':');
+    if (err) goto cleanup;
+
+    if (t.minutes < 10)
+    {
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
+    }
+
+    err = writer_write_uint(writer, t.minutes);
+    if (err) goto cleanup;
+
+    err = writer_write_byte(writer, ':');
+    if (err) goto cleanup;
+
+    if (t.seconds < 10)
+    {
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
+    }
+
+    err = writer_write_uint(writer, t.seconds);
+    if (err) goto cleanup;
+
+    err = writer_write_byte(writer, 0);
+    if (err) goto cleanup;
+
+    return str;
+
+cleanup:
+    alloc->free(alloc, str);
+    return NULL;
+}
+
+HeapStr time_to_date_string(Allocator* alloc, const Time t)
+{
+    HeapStr str = alloc->alloc(alloc, 20);
+
+    if (!str)
+        return NULL;
+    
+    Error err;
+    
+    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 20 };
+    ResultBuffWriter writerRes = buffwriter_init(buff);
+    err = writerRes.error;
+    if (err) goto cleanup;
+    
+    BuffWriter buffWriter = writerRes.value;
+    Writer *writer = (Writer*)&buffWriter;
+
+    const u32 realYear = (u32)t.year + ((u32)t.century * 100);
+    err = writer_write_uint(writer, realYear);
+    if (err) goto cleanup;
+
+    err = writer_write_byte(writer, '-');
+    if (err) goto cleanup;
+
+    if (t.month < 10)
+    {
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
+    }
+
+    err = writer_write_uint(writer, t.month);
+    if (err) goto cleanup;
+
+    err = writer_write_byte(writer, '-');
+    if (err) goto cleanup;
+
+    if (t.day < 10)
+    {
+        err = writer_write_byte(writer, '0');
+        if (err) goto cleanup;
+    }
+
+    err = writer_write_uint(writer, t.day);
+    if (err) goto cleanup;
+
+    return str;
+
+cleanup:
+    alloc->free(alloc, str);
+    return NULL;
+}
+
+HeapStr time_to_time_string(Allocator* alloc, const Time t)
+{
+    HeapStr str = alloc->alloc(alloc, 20);
+
+    if (!str)
+        return NULL;
+    
+    Error err;
+    
+    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 20 };
+    ResultBuffWriter writerRes = buffwriter_init(buff);
+    err = writerRes.error;
+    if (err) goto cleanup;
+    
+    BuffWriter buffWriter = writerRes.value;
+    Writer *writer = (Writer*)&buffWriter;
 
     if (t.hours < 10)
     {

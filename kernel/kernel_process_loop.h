@@ -32,7 +32,5 @@ void kernel_process(void)
     // Handle scheduled events
     scheduler_process();
 
-    interrupts_enable(); // Make sure interrupts are enabled
-                         // if not will lead to hang
     halt();
 }
