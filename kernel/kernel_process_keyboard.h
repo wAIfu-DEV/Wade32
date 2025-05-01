@@ -13,7 +13,7 @@ void keyboard_process(void)
             for (u32 j = 0; j < kGlobal.keyboard.inputListenersHead; ++j)
             {
                 KappInputListener listener = kGlobal.keyboard.inputListeners[j];
-                if (listener.inputBuff != NULL)
+                if (listener.valid)
                     listener.callback(listener.inputBuff, c);
             }
         }

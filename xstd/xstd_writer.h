@@ -217,6 +217,23 @@ Error growbuffwriter_resize(GrowBuffWriter* gbw, u64 newSize)
     return ERR_OK;
 }
 
+Error growstrwriter_resize(GrowStrWriter* gbw, u64 newSize)
+{
+    if (!gbw || newSize == 0)
+        return ERR_INVALID_PARAMETER;
+
+    i8* newBlock = gbw->allocator.realloc(&gbw->allocator, gbw->str, newSize);
+
+    if (!newBlock)
+        return ERR_OUT_OF_MEMORY;
+    
+    gbw->str = newBlock;
+    gbw->strSize = newSize;
+    gbw->writeEnd = newSize;
+    gbw->writeHead = newSize < gbw->writeHead ? newSize : gbw->writeHead;
+    return ERR_OK;
+}
+
 Error writer_write_byte(Writer* w, i8 byte)
 {
     if (!w)

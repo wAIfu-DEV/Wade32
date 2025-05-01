@@ -29,11 +29,10 @@ ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
 
     Args kappArgs = argsRes.value;
     if (kappArgs.size == 0)
-    {
-        goto cleanup;
-    }
+        goto cleanup; // Empty input is valid user input, should just skip
+                      // to new line.
 
-    // Handle command string
+    // Explicit quit user input
     if (string_equals(kappArgs.strings[0], "quit"))
     {
         ret = true;
@@ -42,6 +41,7 @@ ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
 
     kapp_screen_write_char(sb, '\n');
 
+    // Fetch entrypoint from kapp registry
     ResultKEP kepRes = kapp_get_entrypoint(kappArgs.strings[0]);
     if (kepRes.error)
     {
@@ -51,32 +51,26 @@ ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
     else
     {
         KappEntrypoint kapp = kepRes.value;
-        KappReturn kappRet = kapp(kappArgs);
+        KappReturn kappRet = kapp(kappArgs); // Call kapp
 
+        // Print stdout 
         if (kappRet.outOrNull)
         {
             kapp_screen_write_str(sb, kappRet.outOrNull);
-
-            kernel_breakpoint_uint("test", 0);
-
             a->free(a, kappRet.outOrNull);
         }
 
         if (kappRet.errcode)
         {
             if (kappRet.outOrNull)
-            {
                 kapp_screen_write_str(sb, "\n");
-            }
-
+            
             kapp_screen_write_str(sb, "Failed with error: ");
             kapp_screen_write_str(sb, ErrorToString(kappRet.errcode));
         }
     }
 
 cleanup:
-    while (false); // labels are stupid
-
     for (u32 i = 0; i < kappArgs.size; ++i)
     {
         a->free(a, (HeapStr)kappArgs.strings[i]);
@@ -88,7 +82,7 @@ cleanup:
 KappReturn kapp_shell(Args args)
 {
     (void)args;
-    Error err;
+    Error err = ERR_OK;
 
     // Get subscreen buffer from kernel
     ResultKASB sbRes = kapp_request_screen_buffer((Rectu8){
@@ -109,8 +103,7 @@ KappReturn kapp_shell(Args args)
     // Clear screen
     kapp_screen_set_vga_style(&sb, VGA_COLOR_WHITE, VGA_COLOR_BLUE);
     kapp_screen_clear(&sb);
-    // Apply changes to video memory
-    kapp_flush_screen_buffer(&sb);
+    kapp_flush_screen_buffer(&sb); // Apply changes to video memory
 
     // Create input buffer
     KappInputBuff inputBuff = (KappInputBuff){
@@ -121,15 +114,15 @@ KappReturn kapp_shell(Args args)
     // Get key updates from kernel
     kapp_request_input_events(&inputBuff);
 
-    ResultGrowBuffWriter gbWriterRes = growbuffwriter_init(kGlobal.heap.allocator, 16);
-    if (gbWriterRes.error)
+    ResultGrowStrWriter gswRes = growstrwriter_init(kGlobal.heap.allocator, 8);
+    if (gswRes.error)
     {
-        err = gbWriterRes.error;
+        err = gswRes.error;
         goto cleanup;
     }
     
-    GrowBuffWriter gbWriter = gbWriterRes.value;
-    Writer* writer = (Writer*)&gbWriter;
+    GrowStrWriter gsw = gswRes.value;
+    Writer* writer = (Writer*)&gsw;
 
     kapp_screen_write_str(&sb, "Wade32 Kernel Shell - 2025\n");
     kapp_screen_write_str(&sb, "shell> ");
@@ -138,10 +131,10 @@ KappReturn kapp_shell(Args args)
     while (true)
     {
         i8 c = kapp_input_get_key(&inputBuff);
-            
+        
         if (c == 0)
         {
-            kapp_yield();
+            kapp_yield(); // Yield compute time to kernel routines
             continue;
         }
 
@@ -149,45 +142,34 @@ KappReturn kapp_shell(Args args)
         {
         case '\b': {
             c = 0;
-            if (gbWriter.writeHead > 0)
+            if (gsw.writeHead > 0)
             {
-                // Should replace with moving rest of buffer -1
-                --gbWriter.writeHead;
-                err = writer_write_byte(writer, 0);
-                if (err)
-                    goto cleanup;
+                // Replace currently printed character with space
+                __kapp_screen_retreat_cursor(&sb);
+                kapp_screen_write_char(&sb, ' ');
+                __kapp_screen_retreat_cursor(&sb);
+
+                // Overwrite end of user input
+                --gsw.writeHead;
+                gsw.str[gsw.writeHead] = 0;
             }
             break;
         }
         
         case '\n': {
             c = 0;
-            err = writer_write_byte(writer, 0);
-            if (err)
-                goto cleanup;
-            
-            HeapStr commandStr = string_dupe_noresult(&kGlobal.heap.allocator, gbWriter.buff.bytes);
-            if (!commandStr)
-            {
-                err = ERR_OUT_OF_MEMORY;
-                goto cleanup;
-            }
-            --gbWriter.writeHead;
+            HeapStr commandStr = gsw.str;
 
             ibool shouldQuit = __shell_handle_command(commandStr, &sb);
             if (shouldQuit)
                 goto cleanup;
 
-            // Clear allocated memory
-            kGlobal.heap.allocator.free(&kGlobal.heap.allocator, commandStr);
-
-            growbuffwriter_resize(&gbWriter, 16);
-            __shell_fill_input_buffer(gbWriter.buff, 0);
+            // Reset writer
+            gsw.writeHead = 0;
+            growstrwriter_resize(&gsw, 8);
+            gsw.str[0] = 0;
 
             kapp_screen_write_str(&sb, "\nshell> ");
-
-            // Reset writer
-            gbWriter.writeHead = 0;
             kapp_flush_screen_buffer(&sb);
             continue;
         }
@@ -198,30 +180,23 @@ KappReturn kapp_shell(Args args)
 
         if (c != 0)
         {
+            // Write character to user input buffer
             err = writer_write_byte(writer, c);
-            if (err)
-                goto cleanup;
-            // null terminate buffer
-            err = writer_write_byte(writer, 0);
-            if (err)
-                goto cleanup;
+            if (err) goto cleanup;
         }
 
-        if (gbWriter.writeHead > 0)
+        if (gsw.writeHead > 0)
         {
-            u32 bound = c != 0 ? gbWriter.writeHead - 2 : gbWriter.writeHead;
+            // Move cursor to start of line before printing updated user input
+            u32 bound = c != 0 ? gsw.writeHead - 1 : gsw.writeHead;
             for (u32 i = 0; i < bound; ++i)
                 __kapp_screen_retreat_cursor(&sb);
         }
         
-        kapp_screen_write_str(&sb, gbWriter.buff.bytes);
-
-        // next write will overwrite null byte
-        if (gbWriter.writeHead > 0)
-            --gbWriter.writeHead;
+        kapp_screen_write_str(&sb, gsw.str);
         kapp_flush_screen_buffer(&sb);
 
-        kapp_yield();
+        kapp_yield(); // Yield compute time to kernel routines
     }
 
 cleanup:
@@ -230,8 +205,9 @@ cleanup:
     kapp_screen_clear(&sb);
     kapp_flush_screen_buffer(&sb);
     kapp_screen_buffer_deinit(&sb);
+
     return (KappReturn){
-        .errcode = ERR_OK,
+        .errcode = err,
         .outOrNull = NULL,
     };
 }

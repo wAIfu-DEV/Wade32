@@ -11,7 +11,7 @@
 #include "cpu/idt.h"
 #include "cpu/isr.h"
 #include "cpu/timer.h"
-#include  "cpu/interrupts.h"
+#include "cpu/interrupts.h"
 
 #include "drivers/keyboard.h"
 #include "scheduler.h"
@@ -21,6 +21,8 @@
 #include "kernel_apps/kapps_reg.h"
 #include "kernel_apps/kapps_init.h"
 #include "kernel_apps/shared/kapp_exec.h"
+
+#include "random.h"
 
 void __kernel_print_time(void* arg0);
 
@@ -90,6 +92,9 @@ void kernel_main(void)
 
     vga_clear_screen(vga);
     vga_print(vga, "Wade32\n\n");
+
+    Time t = time_utc();
+    pseudorandom_set_seed((u32)t.seconds + (u32)t.minutes + (u32)t.hours);
 
     ResultKEP kepRes = kapp_get_entrypoint("shell");
     if (kepRes.error)

@@ -9,7 +9,7 @@
 #include "types/kapp_inputbuff_type.h"
 #include "kernel_apps/kapps_reg.h"
 
-#define KERNEL_HEAP_SIZE (4096 * 2)
+#define KERNEL_HEAP_SIZE (4096 * 4)
 #define KERNEL_TICK_FREQ 100
 #define KERNEL_PRINT_TIME_INTERVAL_MS 250
 

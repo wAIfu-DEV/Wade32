@@ -20,12 +20,12 @@ void kapp_request_input_events_custom_callback(KappInputBuff* ib, void (*callbac
     if (kGlobal.keyboard.inputListenersHead >= KEY_LISTENERS_SIZE)
         kernel_panic(KERR_INPUT_LISTENERS_OVERFLOW, "Too many input listeners.");
     
-    u32 id = pseudorandom();
-    ib->id = id;
+    ib->id = id_generate_unsafe();
 
     KappInputListener listener = (KappInputListener){
         .callback = callback,
         .inputBuff = ib,
+        .valid = true,
     };
 
     // Find empty spot
@@ -34,7 +34,8 @@ void kapp_request_input_events_custom_callback(KappInputBuff* ib, void (*callbac
         for (u32 i = 0; i < kGlobal.keyboard.inputListenersHead; ++i)
         {
             KappInputListener* il = &kGlobal.keyboard.inputListeners[i];
-            if (il->inputBuff == NULL)
+            
+            if (!il->valid)
             {
                 kGlobal.keyboard.inputListeners[i] = listener;
                 return;
@@ -53,15 +54,15 @@ void kapp_request_input_events(KappInputBuff* ib)
 
 void kapp_remove_input_events(KappInputBuff* ib)
 {
-    u32 seekId = ib->id;
+    ExID seekId = ib->id;
     for (u32 i = 0; i < kGlobal.keyboard.inputListenersHead; ++i)
     {
         KappInputListener* il = &kGlobal.keyboard.inputListeners[i];
-        u32 id = il->inputBuff->id;
+        ExID id = il->inputBuff->id;
         
-        if (seekId == id)
+        if (id_equals(seekId, id))
         {
-            il->inputBuff = NULL;
+            il->valid = false;
             return;
         }
     }
