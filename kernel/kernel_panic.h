@@ -3,6 +3,7 @@
 #include "vga_interface.h"
 #include "cpu/halt.h"
 #include "cpu/interrupts.h"
+#include "random.h"
 
 void kernel_hang(void)
 {

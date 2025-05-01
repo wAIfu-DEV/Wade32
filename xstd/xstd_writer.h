@@ -112,7 +112,6 @@ Error growstrwriter_write_byte(GrowStrWriter* gsw, i8 byte)
             return ERR_WOULD_OVERFLOW;
 
         i8* newBlock = gsw->allocator.realloc(&gsw->allocator, gsw->str, newSize);
-
         if (!newBlock)
             return ERR_OUT_OF_MEMORY;
         

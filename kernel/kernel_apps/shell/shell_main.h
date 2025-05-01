@@ -3,6 +3,7 @@
 #include "../../../xstd/xstd_writer.h"
 #include "../shared/kapp.h"
 #include "../../types/args.h"
+#include "../../kernel_breakpoint.h"
 
 void __shell_fill_input_buffer(HeapBuff buff, i8 fill)
 {
@@ -27,7 +28,6 @@ ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
     }
 
     Args kappArgs = argsRes.value;
-
     if (kappArgs.size == 0)
     {
         goto cleanup;
@@ -56,6 +56,9 @@ ibool __shell_handle_command(HeapStr commandStr, KappScreenBuffer* sb)
         if (kappRet.outOrNull)
         {
             kapp_screen_write_str(sb, kappRet.outOrNull);
+
+            kernel_breakpoint_uint("test", 0);
+
             a->free(a, kappRet.outOrNull);
         }
 
@@ -118,7 +121,7 @@ KappReturn kapp_shell(Args args)
     // Get key updates from kernel
     kapp_request_input_events(&inputBuff);
 
-    ResultGrowBuffWriter gbWriterRes = growbuffwriter_init(kGlobal.heap.allocator, 32);
+    ResultGrowBuffWriter gbWriterRes = growbuffwriter_init(kGlobal.heap.allocator, 16);
     if (gbWriterRes.error)
     {
         err = gbWriterRes.error;
@@ -177,7 +180,8 @@ KappReturn kapp_shell(Args args)
 
             // Clear allocated memory
             kGlobal.heap.allocator.free(&kGlobal.heap.allocator, commandStr);
-            growbuffwriter_resize(&gbWriter, 32);
+
+            growbuffwriter_resize(&gbWriter, 16);
             __shell_fill_input_buffer(gbWriter.buff, 0);
 
             kapp_screen_write_str(&sb, "\nshell> ");
@@ -221,6 +225,7 @@ KappReturn kapp_shell(Args args)
     }
 
 cleanup:
+    kapp_remove_input_events(&inputBuff);
     kapp_screen_set_vga_style(&sb, VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
     kapp_screen_clear(&sb);
     kapp_flush_screen_buffer(&sb);

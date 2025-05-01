@@ -6,9 +6,10 @@
 
 typedef struct
 {
-    i8 buff[KAPP_INPUT_BUFF_SIZE];
-    u8 buffHead;
-    u8 consumed;
+    u32 id;
+    volatile i8 buff[KAPP_INPUT_BUFF_SIZE];
+    volatile u8 buffHead;
+    volatile u8 consumed;
 } KappInputBuff;
 
 typedef void (*__KappKeyCb)(KappInputBuff *ib, i8 c);

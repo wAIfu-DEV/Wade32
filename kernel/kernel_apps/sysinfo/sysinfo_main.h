@@ -12,6 +12,8 @@
 #define WADE_ASCII_3 "|         /   |  || | |  |/ /  | |___\n"
 #define WADE_ASCII_4 "|___/|___/    |__||_| |____/   |____/\n\n"
 
+#define WADE_ASCII WADE_ASCII_0 WADE_ASCII_1 WADE_ASCII_2 WADE_ASCII_3 WADE_ASCII_4
+
 KappReturn kapp_sysinfo(Args args)
 {
     (void)args;
@@ -26,16 +28,24 @@ KappReturn kapp_sysinfo(Args args)
     KappStdout kappStdout = stdoRes.value;
     Writer* stdout = (Writer*)&kappStdout.gsw;
 
-    writer_write_str(stdout, WADE_ASCII_0);
-    writer_write_str(stdout, WADE_ASCII_1);
-    writer_write_str(stdout, WADE_ASCII_2);
-    writer_write_str(stdout, WADE_ASCII_3);
-    writer_write_str(stdout, WADE_ASCII_4);
+    Error err;
 
-    writer_write_str(stdout, "Arch: x86 - 32bit");
+    err = writer_write_str(stdout, WADE_ASCII);
+    if (err)
+        return (KappReturn){
+            .errcode = err,
+            .outOrNull = kappStdout.gsw.str,
+        };
+
+    err = writer_write_str(stdout, "Arch: x86 - 32bit");
+    if (err)
+        return (KappReturn){
+            .errcode = err,
+            .outOrNull = kappStdout.gsw.str,
+        };
 
     return (KappReturn){
         .errcode = ERR_OK,
         .outOrNull = kappStdout.gsw.str,
-    };;
+    };
 }

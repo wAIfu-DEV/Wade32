@@ -18,7 +18,7 @@ typedef struct
 
 ResultArgs args_parse(ConstStr command, Allocator *alloc)
 {
-    ResultList argListRes = list_init(alloc, sizeof(HeapStr), 8);
+    ResultList argListRes = list_init(alloc, sizeof(HeapStr), 4);
     if (argListRes.error)
         return (ResultArgs){
             .error = argListRes.error,
@@ -26,7 +26,7 @@ ResultArgs args_parse(ConstStr command, Allocator *alloc)
 
     List argList = argListRes.value;
 
-    ResultGrowStrWriter gswRes = growstrwriter_init(*alloc, 8);
+    ResultGrowStrWriter gswRes = growstrwriter_init(*alloc, 4);
     if (gswRes.error)
         return (ResultArgs){
             .error = gswRes.error,
