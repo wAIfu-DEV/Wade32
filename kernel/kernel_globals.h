@@ -45,6 +45,11 @@ static struct _kernel_globals
     struct {
         VgaInterface vga;
     } screen;
+
+    struct {
+        u32* canary;
+    } stack;
+    
     
     struct {
         volatile i8 heapMem[KERNEL_HEAP_SIZE];
@@ -84,6 +89,9 @@ static struct _kernel_globals
     },
     .kernel_apps = {
         .registry = {0},
+    },
+    .stack = {
+        .canary = NULL,
     },
 };
 

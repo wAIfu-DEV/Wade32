@@ -5,11 +5,13 @@
 
 void shutdown(void)
 {
-    bios_outw(0x604, 0x2000); // Try the ACPI shutdown port
+    interrupts_disable();
+
+    bios_outw(0x604, 0x2000);  // Try the ACPI shutdown port
     bios_outw(0xB004, 0x2000); // Alternative shutdown (older QEMU, Bochs)
     
     while(true)
     {
-        halt();
+        halt_no_enable_ints();
     }
 }

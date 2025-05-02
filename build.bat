@@ -57,7 +57,7 @@ ECHO # done.
 
 :: Run QEMU
 ::C:\QEMU\qemu-system-%ARCH%.exe -s -drive file=out/Wade32.bin,format=raw,if=floppy
-C:\QEMU\qemu-system-%ARCH%.exe -s -fda out/Wade32.bin
+C:\QEMU\qemu-system-%ARCH%.exe -fda out/Wade32.bin
 
 :Ex
 PAUSE

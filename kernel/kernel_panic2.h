@@ -4,9 +4,9 @@
 #include "cpu/halt.h"
 #include "cpu/interrupts.h"
 #include "random.h"
-#include "kernel_errors.h"
+#include "kernel_exit.h"
 
-void kernel_panic(const u32 errorCode, ConstStr message)
+void kernel_panic2(const u32 errorCode, ConstStr message)
 {
     interrupts_disable();
 
@@ -18,10 +18,7 @@ void kernel_panic(const u32 errorCode, ConstStr message)
     vga_print_hex(&v, errorCode);
     vga_print(&v, "\n");
     vga_print(&v, message);
+    vga_print(&v, '\n\nPress any key 3 times to acknowledge and shutdown.');
 
-    while (true)
-    {
-        halt_no_enable_ints();
-    }
-    
+    kernel_shutdown_on_3_keypress_nogui();
 }

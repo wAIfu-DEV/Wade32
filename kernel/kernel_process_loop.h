@@ -21,5 +21,5 @@ void kernel_process(void)
     // Handle scheduled events
     scheduler_process();
 
-    halt();
+    halt_enable_ints();
 }

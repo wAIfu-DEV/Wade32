@@ -1,4 +1,5 @@
 [org 0x7c00]
+[global floppy_end]
 
 ; This bootloader is a bastard between the one you can find here:
 ; https://github.com/cfenollosa/os-tutorial <- Highly recommend it btw
@@ -141,13 +142,11 @@ lba_to_chs:
 BEGIN_PM:
     mov ebx, MSG_PROT_MODE
     call print_string_pm
-    ;jmp $ ; TEMP FOR DEBUGGING
     call KERNEL_OFFSET ; Give control to the kernel
     jmp $ ; Stay here when the kernel returns control to us (if ever)
 
 
 BOOT_DRIVE db 0 ; It is a good idea to store it in memory because 'dl' may get overwritten
-MSG_DEBUG db "DB", 0
 MSG_REAL_MODE db "Started in 16-bit Real Mode", 0
 MSG_PROT_MODE db "Landed in 32-bit Protected Mode", 0
 MSG_LOAD_KERNEL db "Loading kernel into memory", 0
@@ -166,7 +165,15 @@ kernel_start:
     incbin "../out/kernel.bin"
 kernel_end:
 
+; Pad kernel data up to Extended BIOS Data Area (EBDA)
+; This is the end of kernel memory and data that should not be overwritten
+; If this ever fails (time negative error) then it mean kernel has become
+; too large, no idea how to fix that though lol
+; Good luck future me~
+times 0x9FC00 - ($-$$) db 0
+
 ; Fill out this file to produce a 1.44MB floppy image
 ; If this ever fails (time negative error) then it mean kernel has become
-; too large for floppy.
+; too large for floppy <- how did you do that
 times 1024 * 1440 - ($-$$) db 0
+floppy_end:

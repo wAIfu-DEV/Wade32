@@ -207,7 +207,8 @@ void irq_handler(registers_t r)
 {
     /* After every interrupt we need to send an EOI to the PICs
      * or they will not send another interrupt again */
-    if (r.int_no >= 40) bios_outb(0xA0, 0x20); /* slave */
+    if (r.int_no >= 40)
+        bios_outb(0xA0, 0x20); /* slave */
     bios_outb(0x20, 0x20); /* master */
 
     /* Handle the interrupt in a more modular way */

@@ -4,25 +4,7 @@
 #include "cpu/halt.h"
 #include "cpu/interrupts.h"
 #include "random.h"
-#include "kernel_apps/shared/kapp_input.h"
-#include "kernel_process_keyboard.h"
-
-void kernel_breakpoint()
-{
-    KappInputBuff ib = (KappInputBuff){
-        .buffHead = 0,
-        .consumed = 0,
-    };
-    kapp_request_input_events(&ib);
-
-    while (kapp_input_get_key(&ib) == 0)
-    {
-        interrupts_disable();
-        keyboard_process();
-        halt();
-    }
-    kapp_remove_input_events(&ib);
-}
+#include "kernel_hang.h"
 
 void kernel_breakpoint_uint(ConstStr varName, u32 val)
 {
@@ -34,7 +16,7 @@ void kernel_breakpoint_uint(ConstStr varName, u32 val)
     vga_print_uint(&v, val);
     vga_print(&v, "; Breakpoint");
 
-    kernel_breakpoint();
+    kernel_hang_until_keypress();
 
     vga_print(&v, " Done.");
 }
@@ -49,7 +31,7 @@ void kernel_breakpoint_int(ConstStr varName, i32 val)
     vga_print_int(&v, val);
     vga_print(&v, "; Breakpoint");
 
-    kernel_breakpoint();
+    kernel_hang_until_keypress();
 
     vga_print(&v, " Done.");
 }
@@ -64,7 +46,7 @@ void kernel_breakpoint_str(ConstStr varName, ConstStr val)
     vga_print(&v, val);
     vga_print(&v, "\"; Breakpoint");
 
-    kernel_breakpoint();
+    kernel_hang_until_keypress();
 
     vga_print(&v, " Done.");
 }

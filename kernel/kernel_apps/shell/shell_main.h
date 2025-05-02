@@ -86,10 +86,10 @@ KappReturn kapp_shell(Args args)
 
     // Get subscreen buffer from kernel
     ResultKASB sbRes = kapp_request_screen_buffer((Rectu8){
-        .x = 1,
+        .x = 0,
         .y = 0,
         .height = 23,
-        .width = 78,
+        .width = 80,
     }, false);
 
     if (sbRes.error)
@@ -124,7 +124,6 @@ KappReturn kapp_shell(Args args)
     GrowStrWriter gsw = gswRes.value;
     Writer* writer = (Writer*)&gsw;
 
-    kapp_screen_write_str(&sb, "Wade32 Kernel Shell - 2025\n");
     kapp_screen_write_str(&sb, "shell> ");
     kapp_flush_screen_buffer(&sb);
 
@@ -134,7 +133,7 @@ KappReturn kapp_shell(Args args)
         
         if (c == 0)
         {
-            kapp_yield(); // Yield compute time to kernel routines
+            kapp_yield(); // Yield compute time to kernel
             continue;
         }
 
@@ -196,7 +195,7 @@ KappReturn kapp_shell(Args args)
         kapp_screen_write_str(&sb, gsw.str);
         kapp_flush_screen_buffer(&sb);
 
-        kapp_yield(); // Yield compute time to kernel routines
+        kapp_yield(); // Yield compute time to kernel
     }
 
 cleanup:

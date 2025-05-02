@@ -6,17 +6,12 @@
 #include "../drivers/bios_io.h"
 #include "../types/extended_tick.h"
 #include "../kernel_globals.h"
-
-static void timer_callback(registers_t regs)
-{
-    (void)regs;
-    extick_add_ticks(&kGlobal.timing.tick, 1);
-}
+#include "../kernel_tick_update.h"
 
 void timer_init(u32 freq)
 {
     /* Install the function we just wrote */
-    register_interrupt_handler(IRQ0, timer_callback);
+    register_interrupt_handler(IRQ0, kernel_tick_update);
 
     /* Get the PIT value: hardware clock at 1193180 Hz */
     u32 divisor = 1193180 / freq;
