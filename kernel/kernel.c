@@ -26,6 +26,8 @@
 
 #include "random.h"
 
+#include "kernel_page_allocator.h"
+
 void __scheduled_shutdown(void*);
 
 /**
@@ -45,7 +47,14 @@ void kernel_main(void)
     vga_clear_screen(vga);
     vga_print(vga, "\n> Kernel loaded.\n");
 
+    ResultAllocator pageAllocRes = kernel_create_page_allocator();
+    if (pageAllocRes.error)
+        kernel_panic(KERR_PAGE_ALLOC_INIT_FAILURE, "Failed to create kernel page allocator.");
+    
+    Allocator pageAlloc = pageAllocRes.value;
+
     // Create heap allocator + Debug allocator for info
+    kGlobal.heap.heapMem = pageAlloc.alloc(&pageAlloc, KERNEL_HEAP_SIZE);
     Buffer heapBuff = (Buffer){.bytes = (i8*)kGlobal.heap.heapMem, .size = KERNEL_HEAP_SIZE};
     ResultAllocator allocRes = buffer_allocator(heapBuff);
 

@@ -52,7 +52,8 @@ static struct _kernel_globals
     
     
     struct {
-        volatile i8 heapMem[KERNEL_HEAP_SIZE];
+        //volatile i8 heapMem[KERNEL_HEAP_SIZE];
+        volatile i8 *heapMem;
         DebugAllocatorState debugInfo;
         Allocator allocator;
     } heap;
@@ -83,7 +84,7 @@ static struct _kernel_globals
         .vga = {0},
     },
     .heap = {
-        .heapMem = {0},
+        .heapMem = NULL,
         .allocator = {0},
         .debugInfo = {0},
     },

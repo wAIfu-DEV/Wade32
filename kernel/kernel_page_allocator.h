@@ -23,23 +23,22 @@ typedef struct
 } PageAllocState;
 
 #define ALLOC_MEM_START    (volatile i8*)0x100000
-#define ALLOC_MEM_END      (volatile i8*)floppy_end
+#define ALLOC_MEM_END      (volatile i8*)(1024 * 1440)
 
-// Intentional
-#define PAGE_SIZE          (u32)1024
-#define TOTAL_PAGES        (((ALLOC_MEM_END) - (ALLOC_MEM_START)) / (PAGE_SIZE))
+#define PAGE_SIZE          (u32)4096
+#define TOTAL_PAGES        ((((u32)ALLOC_MEM_END) - ((u32)ALLOC_MEM_START)) / (PAGE_SIZE))
 
 #define ALLOC_BLOCK_COUNT  ((TOTAL_PAGES) / (u32)2)
 #define ALLOC_BLOCK_SIZE   (sizeof(_PageAllocBlock) * ALLOC_BLOCK_COUNT)
-#define ALLOC_BLOCK_START  (volatile i8*)((ALLOC_MEM_START) + sizeof(PageAllocState))
+#define ALLOC_BLOCK_START  (((u32)ALLOC_MEM_START) + sizeof(PageAllocState))
 
 #define ALLOC_HEADER_SIZE  (sizeof(PageAllocState) + (ALLOC_BLOCK_SIZE))
-#define ALLOC_HEADER_START (ALLOC_MEM_START)
-#define ALLOC_HEADER_END   (ALLOC_MEM_START + (ALLOC_HEADER_SIZE))
+#define ALLOC_HEADER_START ((u32)ALLOC_MEM_START)
+#define ALLOC_HEADER_END   ((u32)ALLOC_MEM_START + (ALLOC_HEADER_SIZE))
 #define ALLOC_HEADER_PAGES (((ALLOC_HEADER_END) - (ALLOC_HEADER_START)) / (PAGE_SIZE))
 
 #define ALLOCABLE_PAGES    ((TOTAL_PAGES) - (ALLOC_HEADER_PAGES))
-#define ALLOCABLE_START    (ALLOC_MEM_START + (ALLOC_HEADER_PAGES * PAGE_SIZE))
+#define ALLOCABLE_START    (volatile i8*)((u32)ALLOC_MEM_START + (ALLOC_HEADER_PAGES * PAGE_SIZE))
 
 inline u32 __pages_from_size(u32 size)
 {
@@ -121,7 +120,7 @@ void* __page_alloc_alloc(Allocator* a, u64 size)
                 pab->next = block;
                 block->next = temp;
             }
-            return pab->start;
+            return (void*)pab->start;
         }
         pab = pab->next;
     }

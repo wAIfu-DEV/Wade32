@@ -88,6 +88,11 @@ ResultArgs args_parse(ConstStr command, Allocator *alloc)
         };
     }
 
+    if (argList._itemCnt == 0)
+    {
+        alloc->free(alloc, gsw.str);
+    }
+
     return (ResultArgs){
         .value = (Args){
             .strings = (ConstStr*)argList._data,

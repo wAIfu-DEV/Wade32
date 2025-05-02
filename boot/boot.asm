@@ -1,5 +1,4 @@
 [org 0x7c00]
-[global floppy_end]
 
 ; This bootloader is a bastard between the one you can find here:
 ; https://github.com/cfenollosa/os-tutorial <- Highly recommend it btw
@@ -176,4 +175,3 @@ times 0x9FC00 - ($-$$) db 0
 ; If this ever fails (time negative error) then it mean kernel has become
 ; too large for floppy <- how did you do that
 times 1024 * 1440 - ($-$$) db 0
-floppy_end:
