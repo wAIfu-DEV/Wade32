@@ -12,6 +12,9 @@
 #define WADE_ASCII_3 "|         /   |  || | |  |/ /  | |___\n"
 #define WADE_ASCII_4 "|___/|___/    |__||_| |____/   |____/\n\n"
 
+#define SYSINFO_0    "By:   w-AI-fu_DEV (devan)\n"
+#define SYSINFO_1    "Arch: x86 - 32bit"
+
 #define WADE_ASCII WADE_ASCII_0 WADE_ASCII_1 WADE_ASCII_2 WADE_ASCII_3 WADE_ASCII_4
 
 KappReturn kapp_sysinfo(Args args)
@@ -31,21 +34,22 @@ KappReturn kapp_sysinfo(Args args)
     Error err;
 
     err = writer_write_str(stdout, WADE_ASCII);
-    if (err)
-        return (KappReturn){
-            .errcode = err,
-            .outOrNull = kappStdout.gsw.str,
-        };
+    if (err) goto cleanup;
 
-    err = writer_write_str(stdout, "Arch: x86 - 32bit");
-    if (err)
-        return (KappReturn){
-            .errcode = err,
-            .outOrNull = kappStdout.gsw.str,
-        };
+    err = writer_write_str(stdout, SYSINFO_0);
+    if (err) goto cleanup;
+
+    err = writer_write_str(stdout, SYSINFO_1);
+    if (err) goto cleanup;
 
     return (KappReturn){
         .errcode = ERR_OK,
         .outOrNull = kappStdout.gsw.str,
     };
+
+cleanup:
+    return (KappReturn){
+    .errcode = err,
+    .outOrNull = kappStdout.gsw.str,
+};
 }

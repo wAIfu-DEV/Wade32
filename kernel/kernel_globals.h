@@ -9,12 +9,13 @@
 #include "types/kapp_inputbuff_type.h"
 #include "kernel_apps/kapps_reg.h"
 
-#define KERNEL_HEAP_SIZE (4096 * 4)
-#define KERNEL_TICK_FREQ 100
-#define KERNEL_PRINT_TIME_INTERVAL_MS 250
+#define KERNEL_HEAP_SIZE                (4096 * 4)
+#define KERNEL_TICK_FREQ                100
+#define KERNEL_PRINT_TIME_INTERVAL_MS   250
+#define KERNEL_CHECK_CANARY_INTERVAL_MS 100
 
-#define KEYBOARD_INPUT_BUFF_SIZE 64
-#define KEY_LISTENERS_SIZE 32
+#define KEYBOARD_INPUT_BUFF_SIZE        64
+#define KEY_LISTENERS_SIZE              32
 
 static struct _kernel_globals
 {
@@ -46,13 +47,12 @@ static struct _kernel_globals
         VgaInterface vga;
     } screen;
 
-    struct {
-        u32* canary;
-    } stack;
+    struct
+    {
+        Allocator pageAlloc;
+    } memory;
     
-    
     struct {
-        //volatile i8 heapMem[KERNEL_HEAP_SIZE];
         volatile i8 *heapMem;
         DebugAllocatorState debugInfo;
         Allocator allocator;
@@ -83,6 +83,9 @@ static struct _kernel_globals
     .screen = {
         .vga = {0},
     },
+    .memory = {
+        .pageAlloc = {0},
+    },
     .heap = {
         .heapMem = NULL,
         .allocator = {0},
@@ -90,9 +93,6 @@ static struct _kernel_globals
     },
     .kernel_apps = {
         .registry = {0},
-    },
-    .stack = {
-        .canary = NULL,
     },
 };
 

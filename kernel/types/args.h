@@ -79,6 +79,8 @@ ResultArgs args_parse(ConstStr command, Allocator *alloc)
     {
         // move string to arg list
         list_push(&argList, &gsw.str);
+    } else {
+        alloc->free(alloc, gsw.str);
     }
 
     if (parseFlags.inString)
@@ -86,11 +88,6 @@ ResultArgs args_parse(ConstStr command, Allocator *alloc)
         return (ResultArgs){
             .error = ERR_PARSE_ERROR,
         };
-    }
-
-    if (argList._itemCnt == 0)
-    {
-        alloc->free(alloc, gsw.str);
     }
 
     return (ResultArgs){

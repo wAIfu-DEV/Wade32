@@ -138,7 +138,7 @@ HeapStr time_to_date_string(Allocator* alloc, const Time t)
     
     Error err;
     
-    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 20 };
+    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 11 };
     ResultBuffWriter writerRes = buffwriter_init(buff);
     err = writerRes.error;
     if (err) goto cleanup;
@@ -174,6 +174,9 @@ HeapStr time_to_date_string(Allocator* alloc, const Time t)
     err = writer_write_uint(writer, t.day);
     if (err) goto cleanup;
 
+    err = writer_write_byte(writer, 0);
+    if (err) goto cleanup;
+
     return str;
 
 cleanup:
@@ -190,7 +193,7 @@ HeapStr time_to_time_string(Allocator* alloc, const Time t)
     
     Error err;
     
-    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 20 };
+    HeapBuff buff = (HeapBuff){ .bytes = str, .size = 9 };
     ResultBuffWriter writerRes = buffwriter_init(buff);
     err = writerRes.error;
     if (err) goto cleanup;
